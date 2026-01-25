@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertBookingSchema, type InsertBooking, type Cleaner } from "@shared/schema";
 import { useCreateBooking } from "@/hooks/use-bookings";
 import { useAuth } from "@/hooks/use-auth";
+import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +36,7 @@ interface BookingDialogProps {
 // Extend schema for form validation if needed, though schema from backend is good
 const formSchema = insertBookingSchema.extend({
   // Override date to string for input type="datetime-local" handling
-  date: process.env.NODE_ENV === "test" ? z.any() : z.string().transform((str) => new Date(str)),
+  date: z.string().transform((str) => new Date(str)),
 });
 
 export function BookingDialog({ cleaner, children }: BookingDialogProps) {
