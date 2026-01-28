@@ -4,5 +4,8 @@ import * as schema from "@/shared/schema";
 
 const connectionString = process.env.DATABASE_URL!;
 
-const client = postgres(connectionString);
+// Remove schema parameter from connection string if present (not supported by postgres driver)
+const cleanConnectionString = connectionString.replace(/[?&]schema=[^&]*/, '');
+
+const client = postgres(cleanConnectionString);
 export const db = drizzle(client, { schema });
