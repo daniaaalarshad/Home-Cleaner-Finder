@@ -2,9 +2,9 @@ import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar } 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
-import { users } from "./models/auth";
+import { users, sessions } from "./models/auth";
 
-export { users } from "./models/auth";
+export { users, sessions } from "./models/auth";
 
 export const cleaners = pgTable("cleaners", {
   id: serial("id").primaryKey(),
