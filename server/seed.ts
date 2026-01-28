@@ -16,14 +16,14 @@ async function seed() {
       email: "cleaner1@example.com",
       firstName: "Alice",
       lastName: "Cleaner",
-      profileImageUrl: "https://randomuser.me/api/portraits/women/1.jpg"
+      profileImageUrl: "/images/cleaner_1.png"
     },
     {
       id: "user_2",
       email: "cleaner2@example.com",
       firstName: "Bob",
       lastName: "Sparkle",
-      profileImageUrl: "https://randomuser.me/api/portraits/men/2.jpg"
+      profileImageUrl: "/images/cleaner_2.png"
     }
   ];
 
@@ -31,7 +31,10 @@ async function seed() {
     // using raw db insert since storage might not have upsertUser exposed exactly how I want or to be safe
     // actually authStorage.upsertUser is available but I need to import it.
     // I'll just use db insert.
-    await db.insert(schema.users).values(u).onConflictDoNothing();
+    await db.insert(schema.users).values(u).onConflictDoUpdate({
+      target: schema.users.id,
+      set: u
+    });
   }
 
   // Now cleaners
@@ -44,7 +47,7 @@ async function seed() {
       city: "New York",
       experienceYears: 5,
       specialties: ["Deep Cleaning", "Move-in/out"],
-      imageUrl: "https://randomuser.me/api/portraits/women/1.jpg"
+      imageUrl: "/images/cleaner_1.png"
     },
     {
       userId: "user_2",
@@ -54,7 +57,7 @@ async function seed() {
       city: "San Francisco",
       experienceYears: 8,
       specialties: ["Eco-friendly", "Window Cleaning"],
-      imageUrl: "https://randomuser.me/api/portraits/men/2.jpg"
+      imageUrl: "/images/cleaner_2.png"
     }
   ];
 
@@ -62,6 +65,8 @@ async function seed() {
     const existing = await storage.getCleanerByUserId(c.userId);
     if (!existing) {
       await storage.createCleaner(c);
+    } else {
+      await storage.updateCleaner(existing.id, c);
     }
   }
 
