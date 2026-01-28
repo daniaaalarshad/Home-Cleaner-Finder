@@ -2,113 +2,82 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-type User = {
-  id: string;
+interface User {
+  id: number;
   email: string;
-  firstName: string;
-  lastName: string | null;
-  profileImageUrl: string | null;
-};
-
-async function fetchUser(): Promise<User | null> {
-  const response = await fetch("/api/auth/user", {
-    credentials: "include",
-  });
-
-  if (response.status === 401) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${response.statusText}`);
-  }
-
-  return response.json();
+  name: string;
+  isCleaner: boolean;
 }
 
-type LoginData = {
-  email: string;
-  password: string;
-};
-
-type RegisterData = {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName?: string;
-};
-
 export function useAuth() {
+  return useQuery<User | null>({
+    queryKey: ["auth", "user"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/user");
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error("Failed to fetch user");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
+export function useLogin() {
   const queryClient = useQueryClient();
   
-  const { data: user, isLoading } = useQuery<User | null>({
-    queryKey: ["/api/auth/user"],
-    queryFn: fetchUser,
-    retry: false,
-    staleTime: 1000 * 60 * 5,
-  });
-
-  const loginMutation = useMutation({
-    mutationFn: async (data: LoginData) => {
+  return useMutation({
+    mutationFn: async (data: { email: string; password: string }) => {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        credentials: "include",
       });
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Login failed");
+        throw new Error(error.error || "Login failed");
       }
       return res.json();
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(["/api/auth/user"], data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
     },
   });
+}
 
-  const registerMutation = useMutation({
-    mutationFn: async (data: RegisterData) => {
+export function useRegister() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: { email: string; password: string; name: string }) => {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        credentials: "include",
       });
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Registration failed");
+        throw new Error(error.error || "Registration failed");
       }
       return res.json();
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(["/api/auth/user"], data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
     },
   });
+}
 
-  const logoutMutation = useMutation({
+export function useLogout() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
     mutationFn: async () => {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("Logout failed");
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
     },
   });
-
-  return {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    login: loginMutation.mutateAsync,
-    isLoggingIn: loginMutation.isPending,
-    loginError: loginMutation.error,
-    register: registerMutation.mutateAsync,
-    isRegistering: registerMutation.isPending,
-    registerError: registerMutation.error,
-    logout: logoutMutation.mutate,
-    isLoggingOut: logoutMutation.isPending,
-  };
 }

@@ -1,47 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users } from "@/lib/schema";
+import { users } from "@/shared/schema";
 import { eq } from "drizzle-orm";
-import { comparePasswords, login } from "@/lib/auth";
+import bcrypt from "bcrypt";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const { email, password } = loginSchema.parse(body);
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { message: "Email and password are required" },
-        { status: 400 }
-      );
-    }
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email.toLowerCase()),
+    });
 
-    const [user] = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
-    
     if (!user) {
-      return NextResponse.json(
-        { message: "Invalid email or password" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    const isValid = await comparePasswords(password, user.password);
-    
-    if (!isValid) {
-      return NextResponse.json(
-        { message: "Invalid email or password" },
-        { status: 401 }
-      );
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    await login(user.id);
+    const session = await getSession();
+    session.userId = user.id;
+    session.email = user.email;
+    session.name = user.name;
+    session.isLoggedIn = true;
+    await session.save();
 
-    const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json(userWithoutPassword);
-  } catch (err) {
-    console.error("Login error:", err);
-    return NextResponse.json(
-      { message: "An error occurred during login" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isCleaner: user.isCleaner,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    }
+    console.error("Login error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

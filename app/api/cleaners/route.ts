@@ -1,57 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import { storage } from "@/lib/storage";
-import { getCurrentUser } from "@/lib/auth";
-import { insertCleanerSchema } from "@/lib/schema";
+import { db } from "@/lib/db";
+import { cleaners, users } from "@/shared/schema";
+import { eq, ilike, or } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const city = searchParams.get("city") || undefined;
-    const search = searchParams.get("search") || undefined;
-    
-    const cleaners = await storage.getCleaners({ city, search });
-    return NextResponse.json(cleaners);
-  } catch (err) {
-    console.error("Get cleaners error:", err);
-    return NextResponse.json(
-      { message: "An error occurred" },
-      { status: 500 }
-    );
-  }
-}
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search");
 
-export async function POST(request: NextRequest) {
-  try {
-    const user = await getCurrentUser();
+    let results;
     
-    if (!user) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
+    if (search) {
+      results = await db
+        .select()
+        .from(cleaners)
+        .innerJoin(users, eq(cleaners.userId, users.id))
+        .where(
+          or(
+            ilike(users.name, `%${search}%`),
+            ilike(cleaners.location || "", `%${search}%`)
+          )
+        );
+    } else {
+      results = await db
+        .select()
+        .from(cleaners)
+        .innerJoin(users, eq(cleaners.userId, users.id));
     }
 
-    const body = await request.json();
-    const parsed = insertCleanerSchema.safeParse(body);
-    
-    if (!parsed.success) {
-      return NextResponse.json(
-        { message: parsed.error.errors[0].message },
-        { status: 400 }
-      );
-    }
+    const formattedResults = results.map((row) => ({
+      ...row.cleaners,
+      user: {
+        id: row.users.id,
+        email: row.users.email,
+        name: row.users.name,
+        isCleaner: row.users.isCleaner,
+      },
+    }));
 
-    const cleaner = await storage.createCleaner({
-      ...parsed.data,
-      userId: user.id,
-    });
-    
-    return NextResponse.json(cleaner, { status: 201 });
-  } catch (err) {
-    console.error("Create cleaner error:", err);
-    return NextResponse.json(
-      { message: "An error occurred" },
-      { status: 500 }
-    );
+    return NextResponse.json(formattedResults);
+  } catch (error) {
+    console.error("Cleaners fetch error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

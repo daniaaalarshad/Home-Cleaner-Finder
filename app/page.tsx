@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCleaners } from "@/app/hooks/use-cleaners";
@@ -8,170 +8,152 @@ import { Navbar } from "@/app/components/Navbar";
 import { CleanerCard } from "@/app/components/CleanerCard";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
-import { MapPin, Star, ShieldCheck, Clock } from "lucide-react";
+import { MapPin, Star, ShieldCheck, Clock, Search } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [mounted, setMounted] = useState(false);
   const { data: featuredCleaners, isLoading } = useCleaners();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (search.trim()) {
-      router.push(`/cleaners?search=${encodeURIComponent(search)}`);
-    } else {
-      router.push("/cleaners");
+      router.push(`/cleaners?search=${encodeURIComponent(search.trim())}`);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background">
       <Navbar />
-
+      
+      {/* Hero Section */}
       <section 
-        className="relative h-[600px] flex items-center justify-center overflow-hidden"
-        style={{ backgroundImage: 'url(/hero-living-room.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        className="relative pt-16 min-h-[600px] flex items-center"
+        style={{
+          backgroundImage: "linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1920&q=80')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-[1]"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-[2]"></div>
-
-        <div className="relative z-10 container px-4 mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 drop-shadow-md">
-            Your Home, <span className="text-accent">Spotless.</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center text-white">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6" data-testid="text-hero-title">
+            Your Home, Spotless.
           </h1>
-          <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto drop-shadow-sm font-light leading-relaxed">
-            Connect with top-rated local cleaners for a sparkling home. 
-            Trusted professionals, transparent pricing.
+          <p className="text-xl md:text-2xl mb-8 text-gray-200 max-w-2xl mx-auto">
+            Find trusted, professional home cleaners in your area. Book with confidence and enjoy a sparkling clean home.
           </p>
+          
+          <form onSubmit={handleSearch} className="max-w-xl mx-auto flex gap-2">
+            <div className="relative flex-1">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Enter your city or zip code..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 h-12 bg-white text-foreground"
+                data-testid="input-search"
+              />
+            </div>
+            <Button type="submit" size="lg" className="h-12" data-testid="button-search">
+              <Search className="h-5 w-5 mr-2" />
+              Search
+            </Button>
+          </form>
+        </div>
+      </section>
 
-          <div className="max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-2xl transform hover:-translate-y-1 transition-transform duration-300">
-            <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-2">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                <Input 
-                  placeholder="Enter your city or zip code" 
-                  className="pl-10 h-14 border-0 bg-transparent text-lg focus-visible:ring-0 placeholder:text-muted-foreground/70"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  data-testid="input-search"
-                />
+      {/* Features Section */}
+      <section className="py-16 bg-secondary/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShieldCheck className="h-8 w-8 text-primary" />
               </div>
-              <Button type="submit" size="lg" className="h-14 px-8 text-lg font-medium rounded-xl" data-testid="button-find-cleaners">
-                Find Cleaners
-              </Button>
-            </form>
+              <h3 className="text-lg font-semibold mb-2">Verified Professionals</h3>
+              <p className="text-muted-foreground">
+                All cleaners are background-checked and vetted for your peace of mind.
+              </p>
+            </div>
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Star className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Top-Rated Service</h3>
+              <p className="text-muted-foreground">
+                Our cleaners maintain high ratings through consistent quality work.
+              </p>
+            </div>
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Flexible Scheduling</h3>
+              <p className="text-muted-foreground">
+                Book cleaning sessions that fit your schedule, any day of the week.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-background">
-        <div className="container px-4 mx-auto">
-          <div className="grid md:grid-cols-3 gap-10 text-center">
-            <div className="p-6 rounded-2xl bg-secondary/30 hover:bg-secondary/50 transition-colors">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 text-primary">
-                <ShieldCheck className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Vetted Professionals</h3>
-              <p className="text-muted-foreground">Every cleaner undergoes a strict background check and interview process.</p>
-            </div>
-            <div className="p-6 rounded-2xl bg-secondary/30 hover:bg-secondary/50 transition-colors">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 text-primary">
-                <Star className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Top-Rated Service</h3>
-              <p className="text-muted-foreground">Browse reviews and ratings to find the perfect match for your needs.</p>
-            </div>
-            <div className="p-6 rounded-2xl bg-secondary/30 hover:bg-secondary/50 transition-colors">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 text-primary">
-                <Clock className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Flexible Scheduling</h3>
-              <p className="text-muted-foreground">Book instantly for tomorrow or schedule recurring cleans with ease.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-muted/30">
-        <div className="container px-4 mx-auto">
-          <div className="flex justify-between items-end mb-12">
+      {/* Featured Cleaners */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Cleaners</h2>
-              <p className="text-muted-foreground text-lg">Highly rated professionals near you</p>
+              <h2 className="text-3xl font-bold mb-2" data-testid="text-featured-title">
+                Featured Cleaners
+              </h2>
+              <p className="text-muted-foreground">
+                Top-rated professionals ready to help
+              </p>
             </div>
-            <Link href="/cleaners">
-              <Button variant="outline" className="hidden md:flex" data-testid="button-view-all">View All</Button>
+            <Link href="/cleaners" data-testid="link-view-all">
+              <Button variant="outline">View All</Button>
             </Link>
           </div>
 
           {isLoading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-80 bg-muted animate-pulse rounded-2xl" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-lg h-80 animate-pulse" />
+              ))}
+            </div>
+          ) : featuredCleaners && featuredCleaners.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="grid-featured-cleaners">
+              {featuredCleaners.slice(0, 6).map((cleaner) => (
+                <CleanerCard key={cleaner.id} cleaner={cleaner} />
               ))}
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredCleaners?.slice(0, 4).map((cleaner) => (
-                <CleanerCard key={cleaner.id} cleaner={cleaner} />
-              ))}
-              {(!featuredCleaners || featuredCleaners.length === 0) && (
-                <div className="col-span-full text-center py-12 text-muted-foreground">
-                  No featured cleaners found. Be the first to join!
-                </div>
-              )}
+            <div className="text-center py-12 text-muted-foreground">
+              <p>No cleaners available yet. Check back soon!</p>
             </div>
           )}
-          
-          <div className="mt-8 text-center md:hidden">
-            <Link href="/cleaners">
-              <Button variant="outline" className="w-full">View All Cleaners</Button>
-            </Link>
-          </div>
         </div>
       </section>
 
-      <section className="py-24 bg-primary text-primary-foreground relative overflow-hidden">
-        <div className="container px-4 mx-auto text-center relative z-10">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">Are you a cleaning professional?</h2>
-          <p className="text-lg md:text-xl text-primary-foreground/90 mb-10 max-w-2xl mx-auto">
-            Join our network, set your own rates, and grow your business with HomeShine.
+      {/* CTA Section */}
+      <section className="py-16 bg-primary text-primary-foreground">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+          <p className="text-xl mb-8 opacity-90">
+            Join thousands of happy customers who trust HomeShine for their cleaning needs.
           </p>
-          <Link href="/dashboard">
-            <Button size="lg" variant="secondary" className="h-14 px-8 text-lg rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all" data-testid="button-become-cleaner">
-              Become a Cleaner
+          <Link href="/signup" data-testid="link-cta-signup">
+            <Button size="lg" variant="secondary">
+              Sign Up Free
             </Button>
           </Link>
         </div>
       </section>
 
-      <footer className="bg-white py-12 border-t mt-auto">
-        <div className="container px-4 mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg"></div>
-            <span className="text-xl font-bold">HomeShine</span>
-          </div>
-          <div className="text-muted-foreground text-sm">
-            © 2024 HomeShine. All rights reserved.
-          </div>
-          <div className="flex gap-6 text-muted-foreground text-sm">
-            <a href="#" className="hover:text-primary transition-colors">Terms</a>
-            <a href="#" className="hover:text-primary transition-colors">Privacy</a>
-            <a href="#" className="hover:text-primary transition-colors">Support</a>
-          </div>
+      {/* Footer */}
+      <footer className="py-8 border-t">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-muted-foreground">
+          <p>HomeShine - Professional Home Cleaning Services</p>
         </div>
       </footer>
     </div>

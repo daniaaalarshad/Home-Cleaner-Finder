@@ -1,27 +1,65 @@
 "use client";
 
+import { use, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCleaner } from "@/app/hooks/use-cleaners";
+import { useAuth } from "@/app/hooks/use-auth";
+import { useCreateBooking } from "@/app/hooks/use-bookings";
 import { Navbar } from "@/app/components/Navbar";
-import { BookingDialog } from "@/app/components/BookingDialog";
 import { Button } from "@/app/components/ui/button";
-import { Badge } from "@/app/components/ui/badge";
-import { Skeleton } from "@/app/components/ui/skeleton";
-import { MapPin, Clock, Star, ShieldCheck, CalendarCheck } from "lucide-react";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Star, MapPin, Clock, ArrowLeft, Calendar } from "lucide-react";
+import Link from "next/link";
 
-export default function CleanerProfile({ params }: { params: { id: string } }) {
-  const id = parseInt(params.id || "0");
-  const { data: cleaner, isLoading } = useCleaner(id);
+export default function CleanerProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const cleanerId = parseInt(id);
+  const router = useRouter();
+  
+  const { data: cleaner, isLoading } = useCleaner(cleanerId);
+  const { data: user } = useAuth();
+  const createBooking = useCreateBooking();
+  
+  const [showBooking, setShowBooking] = useState(false);
+  const [date, setDate] = useState("");
+  const [hours, setHours] = useState(2);
+  const [address, setAddress] = useState("");
+  const [notes, setNotes] = useState("");
+  const [error, setError] = useState("");
+
+  const handleBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      await createBooking.mutateAsync({
+        cleanerId,
+        date,
+        hours,
+        address,
+        notes: notes || undefined,
+      });
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to create booking");
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container px-4 mx-auto py-12">
-          <Skeleton className="h-[400px] w-full rounded-3xl mb-8" />
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-2/3" />
-            <Skeleton className="h-4 w-1/3" />
-            <Skeleton className="h-40 w-full" />
+        <div className="pt-24 max-w-4xl mx-auto px-4">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-48 mb-4" />
+            <div className="h-64 bg-muted rounded mb-4" />
           </div>
         </div>
       </div>
@@ -30,129 +68,197 @@ export default function CleanerProfile({ params }: { params: { id: string } }) {
 
   if (!cleaner) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">Cleaner Not Found</h1>
-            <p className="text-muted-foreground">The profile you are looking for does not exist.</p>
-          </div>
+        <div className="pt-24 max-w-4xl mx-auto px-4 text-center">
+          <h1 className="text-2xl font-bold mb-4">Cleaner Not Found</h1>
+          <Link href="/cleaners">
+            <Button>Back to Cleaners</Button>
+          </Link>
         </div>
       </div>
     );
   }
 
+  const totalPrice = cleaner.hourlyRate * hours;
+
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      
-      {/* Profile Header */}
-      <div className="bg-muted/30 border-b">
-        <div className="container px-4 mx-auto py-12 md:py-20">
-          <div className="flex flex-col md:flex-row gap-10 items-start">
-            {/* Image */}
-            <div className="w-full md:w-1/3 lg:w-1/4">
-              <div className="aspect-square rounded-2xl overflow-hidden shadow-xl border-4 border-white bg-white">
-                {cleaner.imageUrl ? (
-                  <img 
-                    src={cleaner.imageUrl} 
-                    alt={cleaner.name} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary">
-                    <Star className="w-20 h-20 opacity-20" />
+      <div className="pt-24 pb-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link href="/cleaners" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Cleaners
+          </Link>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-6">
+                    <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      {cleaner.imageUrl ? (
+                        <img 
+                          src={cleaner.imageUrl} 
+                          alt={cleaner.user.name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-3xl font-bold text-primary">
+                          {cleaner.user.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h1 className="text-2xl font-bold mb-2" data-testid="text-cleaner-name">
+                        {cleaner.user.name}
+                      </h1>
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                          <span className="font-medium">{cleaner.rating?.toFixed(1) || "5.0"}</span>
+                          <span className="text-muted-foreground">({cleaner.reviewCount || 0} reviews)</span>
+                        </div>
+                      </div>
+                      {cleaner.location && (
+                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                          <MapPin className="h-4 w-4" />
+                          <span>{cleaner.location}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>{cleaner.experience} years of experience</span>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {cleaner.bio && (
+                    <div className="mt-6">
+                      <h2 className="font-semibold mb-2">About</h2>
+                      <p className="text-muted-foreground">{cleaner.bio}</p>
+                    </div>
+                  )}
+
+                  {cleaner.specialties && cleaner.specialties.length > 0 && (
+                    <div className="mt-6">
+                      <h2 className="font-semibold mb-2">Specialties</h2>
+                      <div className="flex flex-wrap gap-2">
+                        {cleaner.specialties.map((specialty, index) => (
+                          <span 
+                            key={index}
+                            className="px-3 py-1 bg-secondary rounded-full text-sm"
+                          >
+                            {specialty}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Info */}
-            <div className="flex-1 space-y-6">
-              <div>
-                <div className="flex flex-wrap items-center gap-3 mb-2">
-                  <h1 className="text-4xl md:text-5xl font-bold text-foreground">{cleaner.name}</h1>
-                  <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-200">
-                    <ShieldCheck className="w-3 h-3 mr-1" /> Verified
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center gap-6 text-muted-foreground text-lg">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-5 h-5" />
-                    {cleaner.city}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-5 h-5" />
-                    {cleaner.experienceYears} Years Exp.
-                  </div>
-                </div>
-              </div>
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Booking</span>
+                    <span className="text-primary" data-testid="text-hourly-rate">
+                      ${cleaner.hourlyRate}/hr
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!showBooking ? (
+                    <Button 
+                      className="w-full" 
+                      onClick={() => setShowBooking(true)}
+                      data-testid="button-book-now"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Book Now
+                    </Button>
+                  ) : (
+                    <form onSubmit={handleBooking} className="space-y-4">
+                      {error && (
+                        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                          {error}
+                        </div>
+                      )}
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="date">Date & Time</Label>
+                        <Input
+                          id="date"
+                          type="datetime-local"
+                          value={date}
+                          onChange={(e) => setDate(e.target.value)}
+                          required
+                          data-testid="input-date"
+                        />
+                      </div>
 
-              <div className="flex flex-wrap gap-2">
-                {cleaner.specialties?.map((specialty) => (
-                  <Badge key={specialty} variant="secondary" className="px-4 py-1.5 text-sm">
-                    {specialty}
-                  </Badge>
-                ))}
-              </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="hours">Hours</Label>
+                        <Input
+                          id="hours"
+                          type="number"
+                          min="1"
+                          max="12"
+                          value={hours}
+                          onChange={(e) => setHours(parseInt(e.target.value) || 1)}
+                          required
+                          data-testid="input-hours"
+                        />
+                      </div>
 
-              <div className="pt-4 flex flex-col sm:flex-row gap-4 items-center">
-                <div className="text-3xl font-bold text-primary">
-                  ${cleaner.rate}<span className="text-base font-normal text-muted-foreground">/hr</span>
-                </div>
-                <BookingDialog cleaner={cleaner}>
-                  <Button size="lg" className="w-full sm:w-auto px-8 h-12 text-lg shadow-lg shadow-primary/20" data-testid="button-book-now">
-                    Book Now
-                  </Button>
-                </BookingDialog>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="address">Address</Label>
+                        <Input
+                          id="address"
+                          type="text"
+                          placeholder="123 Main St, City"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          required
+                          data-testid="input-address"
+                        />
+                      </div>
 
-      {/* Bio & Details */}
-      <div className="container px-4 mx-auto py-12">
-        <div className="grid md:grid-cols-3 gap-12">
-          <div className="md:col-span-2 space-y-8">
-            <section className="space-y-4">
-              <h2 className="text-2xl font-bold">About Me</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
-                {cleaner.bio}
-              </p>
-            </section>
+                      <div className="space-y-2">
+                        <Label htmlFor="notes">Notes (optional)</Label>
+                        <Input
+                          id="notes"
+                          type="text"
+                          placeholder="Special instructions..."
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          data-testid="input-notes"
+                        />
+                      </div>
 
-            <section className="space-y-4 pt-8 border-t">
-              <h2 className="text-2xl font-bold">Why Hire Me?</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="p-4 bg-secondary/20 rounded-xl border border-border/50">
-                  <h4 className="font-semibold mb-1 flex items-center gap-2">
-                    <CalendarCheck className="w-4 h-4 text-primary" /> Reliable
-                  </h4>
-                  <p className="text-sm text-muted-foreground">Always on time and ready to work.</p>
-                </div>
-                <div className="p-4 bg-secondary/20 rounded-xl border border-border/50">
-                  <h4 className="font-semibold mb-1 flex items-center gap-2">
-                    <Star className="w-4 h-4 text-primary" /> Detail Oriented
-                  </h4>
-                  <p className="text-sm text-muted-foreground">I don&apos;t miss a spot, guaranteed.</p>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-card border rounded-2xl p-6 shadow-sm sticky top-24">
-              <h3 className="font-bold text-lg mb-4">Availability</h3>
-              <p className="text-muted-foreground text-sm mb-6">
-                Most bookings are confirmed within 24 hours. Check calendar for available slots when booking.
-              </p>
-              <BookingDialog cleaner={cleaner}>
-                <Button className="w-full" variant="outline" data-testid="button-check-availability">
-                  Check Availability
-                </Button>
-              </BookingDialog>
+                      <div className="border-t pt-4">
+                        <div className="flex justify-between text-lg font-semibold mb-4">
+                          <span>Total</span>
+                          <span className="text-primary" data-testid="text-total-price">
+                            ${totalPrice.toFixed(2)}
+                          </span>
+                        </div>
+                        <Button 
+                          type="submit" 
+                          className="w-full" 
+                          disabled={createBooking.isPending}
+                          data-testid="button-confirm-booking"
+                        >
+                          {createBooking.isPending ? "Booking..." : "Confirm Booking"}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

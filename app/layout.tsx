@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
+const inter = Inter({ subsets: ["latin"] });
+
 export const metadata: Metadata = {
-  title: "HomeShine - Find Professional Home Cleaners",
-  description: "Connect with top-rated local cleaners for a sparkling home. Trusted professionals, transparent pricing.",
+  title: "HomeShine - Professional Home Cleaning Services",
+  description: "Find and book trusted home cleaners in your area. Professional cleaning services at competitive rates.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased" suppressHydrationWarning>
-        <Providers>
-          {children}
-        </Providers>
+      <body className={inter.className}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

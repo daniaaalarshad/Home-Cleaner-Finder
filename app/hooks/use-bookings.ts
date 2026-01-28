@@ -1,78 +1,62 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Booking } from "@/shared/schema";
 
-type Booking = {
-  id: number;
-  customerId: string;
-  cleanerId: number;
-  date: Date;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
-  address: string;
-  notes: string | null;
-  createdAt: Date | null;
-  cleaner?: any;
-  customer?: any;
-};
-
-type InsertBooking = {
-  cleanerId: number;
-  date: Date | string;
-  address: string;
-  notes?: string | null;
-};
-
-export function useBookings(role: 'customer' | 'cleaner' = 'customer') {
-  return useQuery({
-    queryKey: ["/api/bookings", role],
+export function useBookings() {
+  return useQuery<Booking[]>({
+    queryKey: ["bookings"],
     queryFn: async () => {
-      const res = await fetch(`/api/bookings?role=${role}`, { credentials: "include" });
-      if (!res.ok) {
-        if (res.status === 401) return null;
-        throw new Error("Failed to fetch bookings");
-      }
-      return res.json() as Promise<Booking[]>;
+      const res = await fetch("/api/bookings");
+      if (!res.ok) throw new Error("Failed to fetch bookings");
+      return res.json();
     },
   });
 }
 
 export function useCreateBooking() {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: async (data: InsertBooking) => {
+    mutationFn: async (data: {
+      cleanerId: number;
+      date: string;
+      hours: number;
+      address: string;
+      notes?: string;
+    }) => {
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        credentials: "include",
       });
       if (!res.ok) {
-        if (res.status === 401) throw new Error("Please log in to book");
-        throw new Error("Failed to create booking");
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create booking");
       }
-      return res.json() as Promise<Booking>;
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
   });
 }
 
 export function useUpdateBookingStatus() {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: "pending" | "confirmed" | "completed" | "cancelled" }) => {
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
       const res = await fetch(`/api/bookings/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
-        credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to update booking status");
-      return res.json() as Promise<Booking>;
+      if (!res.ok) throw new Error("Failed to update booking");
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
   });
 }
