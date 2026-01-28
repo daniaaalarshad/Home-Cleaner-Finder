@@ -1,19 +1,16 @@
 import { storage } from "./storage";
 import { db } from "./db";
 import { cleaners, bookings } from "@shared/schema";
+import bcrypt from "bcrypt";
 
 async function seed() {
-  // Create some dummy cleaners (linked to fake user IDs or just placeholders if I can insert directly)
-  // Since `userId` is a foreign key to `users` table (managed by Auth), I can't easily seed cleaners without users existing in Auth table.
-  // Replit Auth users are created on login.
-  // However, I can manually insert some users into the `users` table for seeding purposes.
-  // `shared/models/auth.ts` has `users` table.
+  const hashedPassword = await bcrypt.hash("password123", 12);
   
-  // Let's insert some fake users first.
   const usersData = [
     {
       id: "user_1",
       email: "cleaner1@example.com",
+      password: hashedPassword,
       firstName: "Alice",
       lastName: "Cleaner",
       profileImageUrl: "/images/cleaner_1.png"
@@ -21,6 +18,7 @@ async function seed() {
     {
       id: "user_2",
       email: "cleaner2@example.com",
+      password: hashedPassword,
       firstName: "Bob",
       lastName: "Sparkle",
       profileImageUrl: "/images/cleaner_2.png"
@@ -28,21 +26,17 @@ async function seed() {
   ];
 
   for (const u of usersData) {
-    // using raw db insert since storage might not have upsertUser exposed exactly how I want or to be safe
-    // actually authStorage.upsertUser is available but I need to import it.
-    // I'll just use db insert.
     await db.insert(schema.users).values(u).onConflictDoUpdate({
       target: schema.users.id,
       set: u
     });
   }
 
-  // Now cleaners
   const cleanersData = [
     {
       userId: "user_1",
       name: "Alice Cleaner",
-      bio: "Professional cleaner with 5 years experience.",
+      bio: "Professional cleaner with 5 years experience. Specializing in deep cleaning and move-in/move-out services.",
       rate: 30,
       city: "New York",
       experienceYears: 5,
@@ -52,7 +46,7 @@ async function seed() {
     {
       userId: "user_2",
       name: "Bob Sparkle",
-      bio: "I make your home sparkle! Eco-friendly products only.",
+      bio: "I make your home sparkle! Eco-friendly products only. Certified green cleaning professional.",
       rate: 40,
       city: "San Francisco",
       experienceYears: 8,
@@ -73,5 +67,5 @@ async function seed() {
   console.log("Seeding complete!");
 }
 
-import * as schema from "@shared/schema"; // need to import schema for users table usage
+import * as schema from "@shared/schema";
 seed().catch(console.error);

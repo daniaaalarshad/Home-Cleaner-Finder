@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { setupAuth, registerAuthRoutes } from "./auth";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -36,10 +36,9 @@ export async function registerRoutes(
     try {
       const user = req.user as any;
       const input = api.cleaners.create.input.parse(req.body);
-      // Ensure user is creating their own profile
       const cleaner = await storage.createCleaner({
         ...input,
-        userId: user.claims.sub,
+        userId: user.id,
       });
       res.status(201).json(cleaner);
     } catch (err) {
@@ -62,7 +61,7 @@ export async function registerRoutes(
       return res.status(404).json({ message: 'Cleaner not found' });
     }
     
-    if (existing.userId !== user.claims.sub) {
+    if (existing.userId !== user.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
@@ -88,15 +87,15 @@ export async function registerRoutes(
     // Or return both? Simple: return bookings where user is customer OR cleaner.
     // The storage method separates them. Let's return a combined list or based on a query param?
     // Let's check if they have a cleaner profile.
-    const cleanerProfile = await storage.getCleanerByUserId(user.claims.sub);
+    const cleanerProfile = await storage.getCleanerByUserId(user.id);
     
-    const customerBookings = await storage.getBookings(user.claims.sub, 'customer');
-    const cleanerBookings = cleanerProfile ? await storage.getBookings(user.claims.sub, 'cleaner') : [];
+    const customerBookings = await storage.getBookings(user.id, 'customer');
+    const cleanerBookings = cleanerProfile ? await storage.getBookings(user.id, 'cleaner') : [];
 
     // Combine or decide structure. The route returns Bookings[].
     // Let's just return customer bookings by default unless ?role=cleaner is passed
     const role = req.query.role as 'customer' | 'cleaner' || 'customer';
-    const bookings = await storage.getBookings(user.claims.sub, role);
+    const bookings = await storage.getBookings(user.id, role);
     res.json(bookings);
   });
 
@@ -109,7 +108,7 @@ export async function registerRoutes(
       const input = api.bookings.create.input.parse(req.body);
       const booking = await storage.createBooking({
         ...input,
-        customerId: user.claims.sub,
+        customerId: user.id,
         date: new Date(input.date), // Ensure date object
       });
       res.status(201).json(booking);
@@ -135,9 +134,9 @@ export async function registerRoutes(
 
     // Only cleaner or customer can update? Usually cleaner confirms/completes, customer cancels.
     // For simplicity, let's verify ownership.
-    const cleanerProfile = await storage.getCleanerByUserId(user.claims.sub);
+    const cleanerProfile = await storage.getCleanerByUserId(user.id);
     const isCleaner = cleanerProfile && cleanerProfile.id === booking.cleanerId;
-    const isCustomer = booking.customerId === user.claims.sub;
+    const isCustomer = booking.customerId === user.id;
 
     if (!isCleaner && !isCustomer) {
       return res.status(401).json({ message: 'Unauthorized' });

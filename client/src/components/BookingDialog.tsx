@@ -61,7 +61,7 @@ export function BookingDialog({ cleaner, children }: BookingDialogProps) {
         description: "Please login to book a cleaner",
         variant: "destructive",
       });
-      window.location.href = "/api/login";
+      window.location.href = "/login";
       return;
     }
 

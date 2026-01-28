@@ -14,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCleanerSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Calendar, MapPin, DollarSign, User as UserIcon } from "lucide-react";
+import { Loader2, Calendar, MapPin, DollarSign, User as UserIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 import * as z from "zod";
 
@@ -31,7 +31,7 @@ export default function Dashboard() {
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   if (!user) {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
     return null;
   }
 
@@ -40,7 +40,7 @@ export default function Dashboard() {
       <Navbar />
       <div className="container px-4 mx-auto py-12">
         <div className="mb-10">
-          <h1 className="text-3xl font-display font-bold mb-2">Welcome back, {user.username}</h1>
+          <h1 className="text-3xl font-display font-bold mb-2">Welcome back, {user.firstName}</h1>
           <p className="text-muted-foreground">Manage your bookings and profile here.</p>
         </div>
 
