@@ -1,13 +1,22 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, ArrowRight, Home, CheckCircle2 } from "lucide-react";
+import { Sparkles, Home, CheckCircle2, Mail, Lock, User, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Signup() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, register, isRegistering } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -15,8 +24,50 @@ export default function Signup() {
     }
   }, [isAuthenticated, isLoading, setLocation]);
 
-  const handleSignup = () => {
-    window.location.href = "/api/login";
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!firstName || !email || !password) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await register({ email, password, firstName, lastName });
+      toast({
+        title: "Account created!",
+        description: "Welcome to HomeShine. Your account is ready.",
+      });
+      setLocation("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Registration failed",
+        description: "An account with this email may already exist.",
+        variant: "destructive",
+      });
+    }
   };
 
   const benefits = [
@@ -28,7 +79,6 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 hero-gradient items-center justify-center p-12">
         <div className="max-w-md text-white">
           <div className="flex items-center gap-3 mb-8">
@@ -53,7 +103,6 @@ export default function Signup() {
         </div>
       </div>
 
-      {/* Right Panel - Signup Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md">
           <Link href="/">
@@ -73,18 +122,104 @@ export default function Signup() {
               </div>
               <CardTitle className="text-2xl font-display">Create Account</CardTitle>
               <CardDescription className="text-base">
-                Sign up to start booking cleaners today
+                Fill in your details to get started
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <Button 
-                onClick={handleSignup}
-                className="w-full h-12 text-lg font-medium"
-                data-testid="button-signup"
-              >
-                Create Your Account
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="firstName"
+                        type="text"
+                        placeholder="John"
+                        className="pl-10"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        data-testid="input-firstname"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Doe"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      data-testid="input-lastname"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      className="pl-10"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      data-testid="input-email"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="At least 6 characters"
+                      className="pl-10"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      data-testid="input-password"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirm your password"
+                      className="pl-10"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      data-testid="input-confirm-password"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-lg font-medium"
+                  disabled={isRegistering}
+                  data-testid="button-signup"
+                >
+                  {isRegistering ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
+              </form>
 
               <p className="text-center text-sm text-muted-foreground mt-6">
                 Already have an account?{" "}
@@ -101,7 +236,6 @@ export default function Signup() {
                 </p>
               </div>
 
-              {/* Mobile benefits */}
               <div className="lg:hidden mt-8 pt-6 border-t">
                 <p className="text-sm font-medium text-foreground mb-4 text-center">Why HomeShine?</p>
                 <div className="space-y-3">
