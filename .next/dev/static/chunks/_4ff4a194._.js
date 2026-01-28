@@ -6,10 +6,12 @@ __turbopack_context__.s([
     "useCleaner",
     ()=>useCleaner,
     "useCleaners",
-    ()=>useCleaners
+    ()=>useCleaners,
+    "useMyCleanerProfile",
+    ()=>useMyCleanerProfile
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$useQuery$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@tanstack/react-query/build/modern/useQuery.js [app-client] (ecmascript)");
-var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.signature();
+var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.signature(), _s2 = __turbopack_context__.k.signature();
 "use client";
 ;
 function useCleaners(search) {
@@ -52,6 +54,27 @@ function useCleaner(id) {
     });
 }
 _s1(useCleaner, "4ZpngI1uv+Uo3WQHEZmTQ5FNM+k=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$useQuery$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useQuery"]
+    ];
+});
+function useMyCleanerProfile() {
+    _s2();
+    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$useQuery$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useQuery"])({
+        queryKey: [
+            "my-cleaner-profile"
+        ],
+        queryFn: {
+            "useMyCleanerProfile.useQuery": async ()=>{
+                const res = await fetch("/api/cleaners/me");
+                if (res.status === 404) return null;
+                if (!res.ok) throw new Error("Failed to fetch profile");
+                return res.json();
+            }
+        }["useMyCleanerProfile.useQuery"]
+    });
+}
+_s2(useMyCleanerProfile, "4ZpngI1uv+Uo3WQHEZmTQ5FNM+k=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$useQuery$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useQuery"]
     ];

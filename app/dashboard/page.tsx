@@ -3,18 +3,48 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/use-auth";
-import { useBookings } from "@/app/hooks/use-bookings";
+import { useBookings, useUpdateBookingStatus } from "@/app/hooks/use-bookings";
+import { useMyCleanerProfile } from "@/app/hooks/use-cleaners";
 import { Navbar } from "@/app/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
-import { Calendar, Clock, MapPin, DollarSign } from "lucide-react";
+import { Calendar, Clock, MapPin, DollarSign, Check, X } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { useToast } from "@/app/hooks/use-toast";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const { data: user, isLoading: userLoading } = useAuth();
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
+  const { data: myCleanerProfile } = useMyCleanerProfile();
+  const updateStatus = useUpdateBookingStatus();
+
+  const handleUpdateStatus = (bookingId: number, status: string) => {
+    updateStatus.mutate(
+      { id: bookingId, status },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Booking updated",
+            description: `Booking has been ${status}.`,
+          });
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "Failed to update booking status.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
+
+  const isCleanerBooking = (bookingCleanerId: number) => {
+    return myCleanerProfile && myCleanerProfile.id === bookingCleanerId;
+  };
 
   useEffect(() => {
     if (!userLoading && !user) {
@@ -152,6 +182,11 @@ export default function DashboardPage() {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
                             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                           </span>
+                          {isCleanerBooking(booking.cleanerId) && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                              Your Service
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
@@ -162,10 +197,56 @@ export default function DashboardPage() {
                           <span>{booking.hours} hours</span>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="flex items-center gap-3">
                         <p className="text-lg font-bold text-primary">
                           ${booking.totalPrice.toFixed(2)}
                         </p>
+                        {booking.status === "pending" && isCleanerBooking(booking.cleanerId) && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateStatus(booking.id, "confirmed")}
+                              disabled={updateStatus.isPending}
+                              data-testid={`button-confirm-${booking.id}`}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateStatus(booking.id, "cancelled")}
+                              disabled={updateStatus.isPending}
+                              data-testid={`button-cancel-${booking.id}`}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Decline
+                            </Button>
+                          </div>
+                        )}
+                        {booking.status === "confirmed" && isCleanerBooking(booking.cleanerId) && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateStatus(booking.id, "completed")}
+                            disabled={updateStatus.isPending}
+                            data-testid={`button-complete-${booking.id}`}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Mark Complete
+                          </Button>
+                        )}
+                        {booking.status === "pending" && !isCleanerBooking(booking.cleanerId) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleUpdateStatus(booking.id, "cancelled")}
+                            disabled={updateStatus.isPending}
+                            data-testid={`button-cancel-customer-${booking.id}`}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
