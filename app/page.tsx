@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCleaners } from "@/app/hooks/use-cleaners";
@@ -13,7 +13,20 @@ import { MapPin, Star, ShieldCheck, Clock } from "lucide-react";
 export default function Home() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [mounted, setMounted] = useState(false);
   const { data: featuredCleaners, isLoading } = useCleaners();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
