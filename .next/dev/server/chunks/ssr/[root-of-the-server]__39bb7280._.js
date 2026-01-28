@@ -24,7 +24,9 @@ __turbopack_context__.s([
     "useCleaner",
     ()=>useCleaner,
     "useCleaners",
-    ()=>useCleaners
+    ()=>useCleaners,
+    "useMyCleanerProfile",
+    ()=>useMyCleanerProfile
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$useQuery$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@tanstack/react-query/build/modern/useQuery.js [app-ssr] (ecmascript)");
 "use client";
@@ -55,6 +57,19 @@ function useCleaner(id) {
             return res.json();
         },
         enabled: !!id
+    });
+}
+function useMyCleanerProfile() {
+    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tanstack$2f$react$2d$query$2f$build$2f$modern$2f$useQuery$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useQuery"])({
+        queryKey: [
+            "my-cleaner-profile"
+        ],
+        queryFn: async ()=>{
+            const res = await fetch("/api/cleaners/me");
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error("Failed to fetch profile");
+            return res.json();
+        }
     });
 }
 }),
