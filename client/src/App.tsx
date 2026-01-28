@@ -8,11 +8,15 @@ import Home from "@/pages/Home";
 import CleanersList from "@/pages/CleanersList";
 import CleanerProfile from "@/pages/CleanerProfile";
 import Dashboard from "@/pages/Dashboard";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
       <Route path="/cleaners" component={CleanersList} />
       <Route path="/cleaners/:id" component={CleanerProfile} />
       <Route path="/dashboard" component={Dashboard} />
