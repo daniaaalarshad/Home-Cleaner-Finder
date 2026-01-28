@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useCleaners } from "@/app/hooks/use-cleaners";
 import { Navbar } from "@/app/components/Navbar";
 import { CleanerCard } from "@/app/components/CleanerCard";
@@ -29,20 +28,12 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="relative w-full h-full">
-            <Image 
-              src="/hero-living-room.jpg"
-              alt="Pristine living room" 
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-        </div>
+      <section 
+        className="relative h-[600px] flex items-center justify-center overflow-hidden"
+        style={{ backgroundImage: 'url(/hero-living-room.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-[1]"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-[2]"></div>
 
         <div className="relative z-10 container px-4 mx-auto text-center">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 drop-shadow-md">
