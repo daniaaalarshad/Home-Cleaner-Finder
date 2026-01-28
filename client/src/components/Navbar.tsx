@@ -33,9 +33,14 @@ export function Navbar() {
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => window.location.href = '/api/login'}>
-                  Login / Sign Up
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Link href="/login">
+                    <Button variant="ghost" data-testid="button-nav-login">Login</Button>
+                  </Link>
+                  <Link href="/signup">
+                    <Button data-testid="button-nav-signup">Sign Up</Button>
+                  </Link>
+                </div>
               )}
             </>
           )}
