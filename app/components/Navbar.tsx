@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/app/hooks/use-auth";
 import { Button } from "@/app/components/ui/button";
@@ -7,6 +8,11 @@ import { Sparkles } from "lucide-react";
 
 export function Navbar() {
   const { user, isLoading, logout } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
@@ -23,7 +29,7 @@ export function Navbar() {
             </Button>
           </Link>
 
-          {!isLoading && (
+          {mounted && !isLoading && (
             <>
               {user ? (
                 <>
