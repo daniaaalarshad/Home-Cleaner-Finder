@@ -47,7 +47,7 @@ export function useUpdateBookingStatus() {
   
   return useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await fetch(`/api/bookings/${id}/status`, {
+      const res = await fetch(`/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),

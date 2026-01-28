@@ -27,3 +27,15 @@ export function useCleaner(id: number) {
     enabled: !!id,
   });
 }
+
+export function useMyCleanerProfile() {
+  return useQuery<CleanerWithUser | null>({
+    queryKey: ["my-cleaner-profile"],
+    queryFn: async () => {
+      const res = await fetch("/api/cleaners/me");
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("Failed to fetch profile");
+      return res.json();
+    },
+  });
+}
