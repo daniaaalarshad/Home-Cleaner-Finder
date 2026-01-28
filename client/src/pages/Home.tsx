@@ -6,6 +6,7 @@ import { CleanerCard } from "@/components/CleanerCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Star, ShieldCheck, Clock } from "lucide-react";
+import heroImage from "@/assets/images/hero-living-room.jpg";
 
 export default function Home() {
   const [location, setLocation] = useLocation();
@@ -29,9 +30,8 @@ export default function Home() {
       <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
-          {/* Unsplash image of a clean, bright living room */}
           <img 
-            src="https://pixabay.com/get/g8817f9d0c62f3515147f147dc7e968e366370ffd3f4eb9b9996030770c19fc4227547e40d47fe434c86c4f8eb99cc09f4d8fca121e9a1e3a792ab6ecbc717668_1280.jpg"
+            src={heroImage}
             alt="Pristine living room" 
             className="w-full h-full object-cover"
           />
