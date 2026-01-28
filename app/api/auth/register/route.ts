@@ -1,55 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users } from "@/lib/schema";
+import { users } from "@/shared/schema";
 import { eq } from "drizzle-orm";
-import { hashPassword, login } from "@/lib/auth";
+import bcrypt from "bcrypt";
+import { z } from "zod";
+
+const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  name: z.string().min(1),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, firstName, lastName } = await request.json();
+    const body = await request.json();
+    const { email, password, name } = registerSchema.parse(body);
 
-    if (!email || !password || !firstName) {
-      return NextResponse.json(
-        { message: "Email, password, and first name are required" },
-        { status: 400 }
-      );
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.email, email.toLowerCase()),
+    });
+
+    if (existingUser) {
+      return NextResponse.json({ error: "Email already registered" }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { message: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const [newUser] = await db.insert(users).values({
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      name,
+    }).returning();
+
+    const session = await getSession();
+    session.userId = newUser.id;
+    session.email = newUser.email;
+    session.name = newUser.name;
+    session.isLoggedIn = true;
+    await session.save();
+
+    return NextResponse.json({
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      isCleaner: newUser.isCleaner,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
-
-    const existingUser = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
-    if (existingUser.length > 0) {
-      return NextResponse.json(
-        { message: "An account with this email already exists" },
-        { status: 400 }
-      );
-    }
-
-    const hashedPassword = await hashPassword(password);
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        firstName,
-        lastName: lastName || null,
-      })
-      .returning();
-
-    await login(newUser.id);
-
-    const { password: _, ...userWithoutPassword } = newUser;
-    return NextResponse.json(userWithoutPassword, { status: 201 });
-  } catch (err) {
-    console.error("Registration error:", err);
-    return NextResponse.json(
-      { message: "An error occurred during registration" },
-      { status: 500 }
-    );
+    console.error("Register error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

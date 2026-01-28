@@ -1,65 +1,30 @@
-import { getIronSession, IronSession } from "iron-session";
+import { getIronSession, SessionOptions } from "iron-session";
 import { cookies } from "next/headers";
-import bcrypt from "bcrypt";
-import { db } from "./db";
-import { users } from "./schema";
-import { eq } from "drizzle-orm";
-
-const SALT_ROUNDS = 12;
 
 export interface SessionData {
-  userId?: string;
+  userId?: number;
+  email?: string;
+  name?: string;
   isLoggedIn: boolean;
 }
 
-const sessionOptions = {
-  password: process.env.SESSION_SECRET!,
-  cookieName: "homeshine-session",
+const sessionOptions: SessionOptions = {
+  password: process.env.SESSION_SECRET || "complex_password_at_least_32_characters_long",
+  cookieName: "homeshine_session",
   cookieOptions: {
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
-    maxAge: 60 * 60 * 24 * 7, // 1 week
+    sameSite: "lax",
   },
 };
 
-export async function getSession(): Promise<IronSession<SessionData>> {
+export async function getSession() {
   const cookieStore = await cookies();
-  return getIronSession<SessionData>(cookieStore, sessionOptions);
+  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  return session;
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, SALT_ROUNDS);
-}
-
-export async function comparePasswords(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
-
-export async function getCurrentUser() {
-  const session = await getSession();
-  
-  if (!session.isLoggedIn || !session.userId) {
-    return null;
-  }
-
-  const [user] = await db.select().from(users).where(eq(users.id, session.userId));
-  
-  if (!user) {
-    return null;
-  }
-
-  const { password: _, ...userWithoutPassword } = user;
-  return userWithoutPassword;
-}
-
-export async function login(userId: string) {
-  const session = await getSession();
-  session.userId = userId;
-  session.isLoggedIn = true;
-  await session.save();
-}
-
-export async function logout() {
+export async function destroySession() {
   const session = await getSession();
   session.destroy();
 }

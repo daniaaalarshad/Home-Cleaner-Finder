@@ -1,30 +1,38 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, boolean, doublePrecision } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
-import { users, sessions } from "./models/auth";
 
-export { users, sessions } from "./models/auth";
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  name: text("name").notNull(),
+  isCleaner: boolean("is_cleaner").default(false),
+});
 
 export const cleaners = pgTable("cleaners", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id).notNull().unique(),
-  name: text("name").notNull(),
-  bio: text("bio").notNull(),
-  rate: integer("rate").notNull(), // Hourly rate in dollars
-  city: text("city").notNull(),
-  experienceYears: integer("experience_years").notNull(),
-  imageUrl: text("image_url"),
+  userId: integer("user_id").notNull().references(() => users.id),
+  bio: text("bio"),
+  hourlyRate: doublePrecision("hourly_rate").notNull(),
+  experience: integer("experience").notNull(),
   specialties: text("specialties").array(),
-  createdAt: timestamp("created_at").defaultNow(),
+  location: text("location"),
+  rating: doublePrecision("rating").default(5.0),
+  reviewCount: integer("review_count").default(0),
+  imageUrl: text("image_url"),
+  available: boolean("available").default(true),
 });
 
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
-  customerId: varchar("customer_id").references(() => users.id).notNull(),
-  cleanerId: integer("cleaner_id").references(() => cleaners.id).notNull(),
+  customerId: integer("customer_id").notNull().references(() => users.id),
+  cleanerId: integer("cleaner_id").notNull().references(() => cleaners.id),
   date: timestamp("date").notNull(),
-  status: text("status", { enum: ["pending", "confirmed", "completed", "cancelled"] }).default("pending").notNull(),
+  hours: integer("hours").notNull(),
+  totalPrice: doublePrecision("total_price").notNull(),
+  status: text("status").notNull().default("pending"),
   address: text("address").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -32,11 +40,11 @@ export const bookings = pgTable("bookings", {
 
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
-  cleanerProfile: one(cleaners, {
+  cleaner: one(cleaners, {
     fields: [users.id],
     references: [cleaners.userId],
   }),
-  bookings: many(bookings, { relationName: "customerBookings" }),
+  bookings: many(bookings),
 }));
 
 export const cleanersRelations = relations(cleaners, ({ one, many }) => ({
@@ -44,29 +52,32 @@ export const cleanersRelations = relations(cleaners, ({ one, many }) => ({
     fields: [cleaners.userId],
     references: [users.id],
   }),
-  bookings: many(bookings, { relationName: "cleanerBookings" }),
+  bookings: many(bookings),
 }));
 
 export const bookingsRelations = relations(bookings, ({ one }) => ({
   customer: one(users, {
     fields: [bookings.customerId],
     references: [users.id],
-    relationName: "customerBookings",
   }),
   cleaner: one(cleaners, {
     fields: [bookings.cleanerId],
     references: [cleaners.id],
-    relationName: "cleanerBookings",
   }),
 }));
 
-// Schemas
-export const insertCleanerSchema = createInsertSchema(cleaners).omit({ id: true, userId: true, createdAt: true });
-export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, customerId: true, createdAt: true, status: true });
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export const insertCleanerSchema = createInsertSchema(cleaners).omit({ id: true });
+export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Cleaner = typeof cleaners.$inferSelect;
 export type InsertCleaner = z.infer<typeof insertCleanerSchema>;
 export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
+
+// Extended types for API responses
+export type CleanerWithUser = Cleaner & { user: User };

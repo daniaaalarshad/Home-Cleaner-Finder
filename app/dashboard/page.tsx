@@ -1,353 +1,187 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/use-auth";
-import { useBookings, useUpdateBookingStatus } from "@/app/hooks/use-bookings";
-import { useCreateCleaner, useUpdateCleaner, useCleaners } from "@/app/hooks/use-cleaners";
+import { useBookings } from "@/app/hooks/use-bookings";
 import { Navbar } from "@/app/components/Navbar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Textarea } from "@/app/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/components/ui/form";
-import { Badge } from "@/app/components/ui/badge";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useToast } from "@/app/hooks/use-toast";
-import { Loader2, Calendar, MapPin, DollarSign, User as UserIcon, Clock } from "lucide-react";
+import { Calendar, Clock, MapPin, DollarSign } from "lucide-react";
+import Link from "next/link";
 import { format } from "date-fns";
-import * as z from "zod";
 
-export default function Dashboard() {
-  const { user, isLoading: authLoading } = useAuth();
-  const { data: bookings, isLoading: bookingsLoading } = useBookings();
-  const { data: cleaners } = useCleaners();
+export default function DashboardPage() {
   const router = useRouter();
-  
-  const myCleanerProfile = cleaners?.find(c => c.userId === user?.id);
-  const isCleaner = !!myCleanerProfile;
+  const { data: user, isLoading: userLoading } = useAuth();
+  const { data: bookings, isLoading: bookingsLoading } = useBookings();
 
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, userLoading, router]);
+
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-24 max-w-4xl mx-auto px-4">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-48 mb-8" />
+            <div className="h-32 bg-muted rounded mb-4" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
-    router.push("/login");
     return null;
   }
 
-  return (
-    <div className="min-h-screen bg-muted/20">
-      <Navbar />
-      <div className="container px-4 mx-auto py-12">
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold mb-2">Welcome back, {user.firstName}</h1>
-          <p className="text-muted-foreground">Manage your bookings and profile here.</p>
-        </div>
-
-        <Tabs defaultValue={isCleaner ? "requests" : "bookings"} className="space-y-8">
-          <TabsList className="bg-background border p-1 h-auto rounded-xl shadow-sm">
-            <TabsTrigger value="bookings" className="px-6 py-2 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary" data-testid="tab-bookings">
-              My Bookings
-            </TabsTrigger>
-            {isCleaner && (
-              <TabsTrigger value="requests" className="px-6 py-2 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary" data-testid="tab-requests">
-                Client Requests
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="profile" className="px-6 py-2 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary" data-testid="tab-profile">
-              {isCleaner ? "Cleaner Profile" : "Become a Cleaner"}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="bookings" className="space-y-6">
-            <h2 className="text-xl font-semibold mb-4">Your Upcoming Cleanings</h2>
-            {bookingsLoading ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map(i => <div key={i} className="h-48 bg-muted animate-pulse rounded-xl" />)}
-              </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {bookings?.filter(b => b.customerId === user.id).map((booking) => (
-                  <BookingCard key={booking.id} booking={booking} type="customer" />
-                ))}
-                {bookings?.filter(b => b.customerId === user.id).length === 0 && (
-                  <div className="col-span-full p-12 text-center border-2 border-dashed rounded-2xl bg-muted/10">
-                    <p className="text-muted-foreground mb-4">You haven&apos;t booked any cleanings yet.</p>
-                    <Button onClick={() => router.push("/cleaners")} data-testid="button-find-cleaner">Find a Cleaner</Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </TabsContent>
-
-          {isCleaner && (
-            <TabsContent value="requests" className="space-y-6">
-               <h2 className="text-xl font-semibold mb-4">Requests from Clients</h2>
-               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {bookings?.filter(b => b.cleanerId === myCleanerProfile?.id).map((booking) => (
-                  <BookingCard key={booking.id} booking={booking} type="cleaner" />
-                ))}
-                {bookings?.filter(b => b.cleanerId === myCleanerProfile?.id).length === 0 && (
-                  <div className="col-span-full p-12 text-center border-2 border-dashed rounded-2xl bg-muted/10">
-                    <p className="text-muted-foreground">No booking requests yet.</p>
-                  </div>
-                )}
-               </div>
-            </TabsContent>
-          )}
-
-          <TabsContent value="profile">
-            <div className="max-w-2xl mx-auto">
-              <CleanerProfileForm existingProfile={myCleanerProfile} userId={user.id} />
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-}
-
-function BookingCard({ booking, type }: { booking: any, type: "customer" | "cleaner" }) {
-  const updateStatus = useUpdateBookingStatus();
-  
-  const statusColors = {
-    pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    confirmed: "bg-blue-100 text-blue-800 border-blue-200",
-    completed: "bg-green-100 text-green-800 border-green-200",
-    cancelled: "bg-red-100 text-red-800 border-red-200",
-  };
-
-  return (
-    <Card className="shadow-sm hover:shadow-md transition-shadow" data-testid={`card-booking-${booking.id}`}>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start mb-2 gap-2">
-          <Badge variant="outline" className={`${statusColors[booking.status as keyof typeof statusColors]} border`}>
-            {booking.status.toUpperCase()}
-          </Badge>
-          <div className="text-sm text-muted-foreground font-medium">
-            {format(new Date(booking.date), "MMM d, yyyy")}
-          </div>
-        </div>
-        <CardTitle className="text-lg">
-          {type === "customer" 
-            ? `Cleaning with ${booking.cleaner?.name || "Cleaner"}`
-            : `Request from Customer #${booking.customerId}`
-          }
-        </CardTitle>
-        <CardDescription className="flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {format(new Date(booking.date), "h:mm a")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-sm space-y-3">
-        <div className="flex items-start gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-          <span>{booking.address}</span>
-        </div>
-        {booking.notes && (
-          <div className="p-3 bg-muted/50 rounded-lg text-muted-foreground italic text-xs">
-            &quot;{booking.notes}&quot;
-          </div>
-        )}
-        
-        {type === "cleaner" && booking.status === "pending" && (
-          <div className="flex gap-2 pt-2">
-            <Button 
-              size="sm" 
-              className="flex-1 bg-green-600 hover:bg-green-700"
-              disabled={updateStatus.isPending}
-              onClick={() => updateStatus.mutate({ id: booking.id, status: "confirmed" })}
-              data-testid={`button-accept-${booking.id}`}
-            >
-              Accept
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="flex-1 text-red-600 hover:bg-red-50 border-red-100"
-              disabled={updateStatus.isPending}
-              onClick={() => updateStatus.mutate({ id: booking.id, status: "cancelled" })}
-              data-testid={`button-decline-${booking.id}`}
-            >
-              Decline
-            </Button>
-          </div>
-        )}
-
-        {type === "cleaner" && booking.status === "confirmed" && (
-          <Button 
-             size="sm"
-             className="w-full"
-             disabled={updateStatus.isPending}
-             onClick={() => updateStatus.mutate({ id: booking.id, status: "completed" })}
-             data-testid={`button-complete-${booking.id}`}
-          >
-            Mark Complete
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function CleanerProfileForm({ existingProfile, userId }: { existingProfile?: any, userId: string }) {
-  const { toast } = useToast();
-  const createCleaner = useCreateCleaner();
-  const updateCleaner = useUpdateCleaner();
-  
-  const formSchema = z.object({
-    name: z.string().min(2, "Name is required"),
-    bio: z.string().min(10, "Bio must be at least 10 characters"),
-    rate: z.coerce.number().min(10, "Minimum rate is $10/hr"),
-    city: z.string().min(2, "City is required"),
-    experienceYears: z.coerce.number().min(0),
-    imageUrl: z.string().optional(),
-    specialties: z.string().transform(str => str.split(',').map(s => s.trim()).filter(Boolean)),
-  });
-
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: existingProfile?.name || "",
-      bio: existingProfile?.bio || "",
-      rate: existingProfile?.rate || 25,
-      city: existingProfile?.city || "",
-      experienceYears: existingProfile?.experienceYears || 0,
-      imageUrl: existingProfile?.imageUrl || "",
-      specialties: existingProfile?.specialties?.join(", ") || "Deep Cleaning, Move-out, Organization",
-    },
-  });
-
-  const onSubmit = (data: any) => {
-    const payload = { ...data };
-    
-    if (existingProfile) {
-      updateCleaner.mutate({ id: existingProfile.id, ...payload }, {
-        onSuccess: () => toast({ title: "Profile Updated", description: "Your changes have been saved." })
-      });
-    } else {
-      createCleaner.mutate(payload, {
-        onSuccess: () => toast({ title: "Profile Created", description: "You are now listed as a cleaner!" })
-      });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const isPending = createCleaner.isPending || updateCleaner.isPending;
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{existingProfile ? "Edit Profile" : "Become a Cleaner"}</CardTitle>
-        <CardDescription>
-          {existingProfile 
-            ? "Update your public profile information." 
-            : "Set up your profile to start receiving bookings."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Display Name</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-name" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-city" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="pt-24 pb-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold" data-testid="text-welcome">
+              Welcome, {user.name}!
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Manage your bookings and account
+            </p>
+          </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="rate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hourly Rate ($)</FormLabel>
-                    <FormControl><Input type="number" {...field} data-testid="input-rate" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="experienceYears"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Years Experience</FormLabel>
-                    <FormControl><Input type="number" {...field} data-testid="input-experience" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold" data-testid="text-booking-count">
+                      {bookings?.length || 0}
+                    </p>
+                    <p className="text-muted-foreground text-sm">Total Bookings</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Profile Image URL</FormLabel>
-                  <FormControl><Input placeholder="https://..." {...field} data-testid="input-image-url" /></FormControl>
-                  <FormMessage />
-                </FormItem>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {bookings?.filter(b => b.status === "pending").length || 0}
+                    </p>
+                    <p className="text-muted-foreground text-sm">Pending</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <DollarSign className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      ${bookings?.reduce((sum, b) => sum + b.totalPrice, 0).toFixed(0) || 0}
+                    </p>
+                    <p className="text-muted-foreground text-sm">Total Spent</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Your Bookings</CardTitle>
+              <Link href="/cleaners">
+                <Button size="sm" data-testid="button-book-cleaner">
+                  Book a Cleaner
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {bookingsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 bg-muted rounded animate-pulse" />
+                  ))}
+                </div>
+              ) : bookings && bookings.length > 0 ? (
+                <div className="space-y-4" data-testid="list-bookings">
+                  {bookings.map((booking) => (
+                    <div 
+                      key={booking.id} 
+                      className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      data-testid={`booking-${booking.id}`}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">
+                            {format(new Date(booking.date), "MMM d, yyyy 'at' h:mm a")}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{booking.address}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{booking.hours} hours</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-primary">
+                          ${booking.totalPrice.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">No bookings yet</p>
+                  <Link href="/cleaners">
+                    <Button>Find a Cleaner</Button>
+                  </Link>
+                </div>
               )}
-            />
-
-            <FormField
-              control={form.control}
-              name="specialties"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Specialties (comma separated)</FormLabel>
-                  <FormControl><Input placeholder="Deep Cleaning, Laundry, Windows..." {...field} data-testid="input-specialties" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Tell clients about your experience and style..." 
-                      className="h-32 resize-none" 
-                      {...field}
-                      data-testid="input-bio"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" className="w-full" disabled={isPending} data-testid="button-save-profile">
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {existingProfile ? "Save Changes" : "Create Profile"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 }
