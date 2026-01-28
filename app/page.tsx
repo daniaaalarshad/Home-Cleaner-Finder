@@ -31,13 +31,15 @@ export default function Home() {
 
       <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image 
-            src="/hero-living-room.jpg"
-            alt="Pristine living room" 
-            fill
-            className="object-cover"
-            priority
-          />
+          <div className="relative w-full h-full">
+            <Image 
+              src="/hero-living-room.jpg"
+              alt="Pristine living room" 
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
         </div>
