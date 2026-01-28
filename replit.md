@@ -29,7 +29,7 @@ Key frontend patterns:
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Dual auth system - Passport.js with local strategy (email/password) and Replit Auth integration via OpenID Connect
+- **Authentication**: Traditional email/password auth with Passport.js local strategy
 - **Session Management**: PostgreSQL-backed sessions using connect-pg-simple
 - **Password Hashing**: bcrypt with 12 salt rounds
 
@@ -61,6 +61,7 @@ Routes defined in `shared/routes.ts` with Zod schemas:
 - `GET /api/auth/user` - Get current authenticated user
 - `POST /api/auth/login` - Login with email/password
 - `POST /api/auth/register` - Register new account
+- `POST /api/auth/logout` - Log out current user
 
 ### Build System
 - Development: Vite dev server with HMR proxied through Express
@@ -79,14 +80,9 @@ Routes defined in `shared/routes.ts` with Zod schemas:
 - **connect-pg-simple**: PostgreSQL session store
 - **bcrypt**: Password hashing
 
-### Replit Integration (Optional)
-- **Replit Auth**: OpenID Connect integration for Replit-hosted deployments
-- **@replit/vite-plugin-***: Development tools for Replit environment
-
 ### Required Environment Variables
 - `DATABASE_URL`: PostgreSQL connection string
 - `SESSION_SECRET`: Secret for signing session cookies
-- `ISSUER_URL` (optional): OpenID Connect issuer for Replit Auth
 
 ### UI/Frontend Libraries
 - **Radix UI**: Accessible component primitives

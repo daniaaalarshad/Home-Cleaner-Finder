@@ -187,7 +187,7 @@ function BookingCard({ booking, type }: { booking: any, type: "customer" | "clea
   );
 }
 
-function CleanerProfileForm({ existingProfile, userId }: { existingProfile?: any, userId: number }) {
+function CleanerProfileForm({ existingProfile, userId }: { existingProfile?: any, userId: string }) {
   const { toast } = useToast();
   const createCleaner = useCreateCleaner();
   const updateCleaner = useUpdateCleaner();
