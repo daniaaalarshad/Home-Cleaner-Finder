@@ -101,6 +101,7 @@ export function Navbar() {
                       href="/become-cleaner" 
                       className="text-muted-foreground hover:text-foreground"
                       onClick={() => setMobileMenuOpen(false)}
+                      data-testid="link-become-cleaner-mobile"
                     >
                       Become a Cleaner
                     </Link>
