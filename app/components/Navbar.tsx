@@ -38,6 +38,15 @@ export function Navbar() {
               <div className="w-20 h-9 bg-muted rounded-md animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-4">
+                {!user.isCleaner && (
+                  <Link 
+                    href="/become-cleaner" 
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="link-become-cleaner"
+                  >
+                    Become a Cleaner
+                  </Link>
+                )}
                 <Link href="/dashboard" data-testid="link-dashboard">
                   <Button variant="ghost" size="sm">
                     <User className="h-4 w-4 mr-2" />
@@ -87,6 +96,15 @@ export function Navbar() {
               </Link>
               {user ? (
                 <>
+                  {!user.isCleaner && (
+                    <Link 
+                      href="/become-cleaner" 
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Become a Cleaner
+                    </Link>
+                  )}
                   <Link 
                     href="/dashboard" 
                     className="text-muted-foreground hover:text-foreground"
