@@ -30,7 +30,7 @@ export default function Home() {
       <section 
         className="relative pt-16 min-h-[600px] flex items-center"
         style={{
-          backgroundImage: "linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1920&q=80')",
+          backgroundImage: "linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1721620780493-e905708eba0b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
