@@ -126,6 +126,7 @@ Relationships:
 - `npm run dev`: Start Next.js development server on port 5000
 - `npm run build`: Build for production
 - `npm run db:push`: Push schema changes to database
+- `npx tsx lib/seed.ts`: Seed database with sample data (3 cleaners, 1 customer, 1 booking)
 
 ### Import Path Aliases
 - `@/*`: Resolves to project root
