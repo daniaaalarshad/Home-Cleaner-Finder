@@ -19,6 +19,7 @@ Design preference: Lighter blue color scheme (HSL: 199 89% 48%) for a trustworth
 - **TanStack React Query**: Server state management
 - **UI Components**: shadcn/ui component library built on Radix UI primitives
 - **Styling**: Tailwind CSS with custom theme configuration
+- **Dark Mode**: next-themes with class-based strategy, toggle in Navbar
 - **Forms**: React Hook Form with Zod validation
 
 ### Directory Structure
