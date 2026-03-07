@@ -51,7 +51,7 @@ export default function Home() {
                 placeholder="Enter your city or zip code..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 h-12 bg-white text-foreground"
+                className="pl-10 h-12 bg-background text-foreground"
                 data-testid="input-search"
               />
             </div>

@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useAuth, useLogout } from "@/app/hooks/use-auth";
 import { Button } from "@/app/components/ui/button";
-import { Sparkles, User, LogOut, Menu } from "lucide-react";
+import { Sparkles, User, LogOut, Menu, Sun, Moon } from "lucide-react";
 import { useState } from "react";
+import { useTheme } from "next-themes";
 
 export function Navbar() {
   const { data: user, isLoading } = useAuth();
   const logout = useLogout();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
 
   const handleLogout = async () => {
     await logout.mutateAsync();
@@ -75,13 +77,26 @@ export function Navbar() {
             )}
           </div>
 
-          <button 
-            className="md:hidden p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            data-testid="button-mobile-menu"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              data-testid="button-theme-toggle"
+            >
+              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+            <button 
+              className="md:hidden p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              data-testid="button-mobile-menu"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {mobileMenuOpen && (
