@@ -7,7 +7,7 @@ import { z } from "zod";
 
 const createCleanerSchema = z.object({
   bio: z.string().min(10, "Bio must be at least 10 characters"),
-  hourlyRate: z.number().min(1, "Hourly rate must be at least $1"),
+  hourlyRate: z.number().min(1, "Hourly rate must be at least PKR 1"),
   experience: z.number().min(0, "Experience cannot be negative"),
   specialties: z.array(z.string()).min(1, "Select at least one specialty"),
   location: z.string().min(1, "Location is required"),

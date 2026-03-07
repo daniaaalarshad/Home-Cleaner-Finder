@@ -71,7 +71,7 @@ export function CleanerCard({ cleaner }: CleanerCardProps) {
 
         <div className="flex items-center justify-between">
           <div className="text-lg font-bold text-primary" data-testid={`text-cleaner-rate-${cleaner.id}`}>
-            ${cleaner.hourlyRate}/hr
+            PKR {cleaner.hourlyRate}/hr
           </div>
           <Link href={`/cleaners/${cleaner.id}`} data-testid={`link-view-cleaner-${cleaner.id}`}>
             <Button size="sm">View Profile</Button>

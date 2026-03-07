@@ -140,7 +140,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">
-                      ${bookings?.reduce((sum, b) => sum + b.totalPrice, 0).toFixed(0) || 0}
+                      PKR {bookings?.reduce((sum, b) => sum + b.totalPrice, 0).toFixed(0) || 0}
                     </p>
                     <p className="text-muted-foreground text-sm">Total Spent</p>
                   </div>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <p className="text-lg font-bold text-primary">
-                          ${booking.totalPrice.toFixed(2)}
+                          PKR{booking.totalPrice.toFixed(2)}
                         </p>
                         {booking.status === "pending" && isCleanerBooking(booking.cleanerId) && (
                           <div className="flex gap-2">
