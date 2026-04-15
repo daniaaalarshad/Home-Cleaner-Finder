@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useAuth, useLogout } from "@/app/hooks/use-auth";
 import { Button } from "@/app/components/ui/button";
-import { Sparkles, User, LogOut, Menu, Sun, Moon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+import { Sparkles, User, LogOut, Menu, Sun, Moon, LayoutDashboard, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 
@@ -28,42 +36,64 @@ export function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link 
-              href="/cleaners" 
+            <Link
+              href="/cleaners"
               className="text-muted-foreground hover:text-foreground transition-colors"
               data-testid="link-find-cleaners"
             >
               Find Cleaners
             </Link>
-            
+
             {isLoading ? (
               <div className="w-20 h-9 bg-muted rounded-md animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-4">
                 {!user.isCleaner && (
-                  <Link 
-                    href="/become-cleaner" 
+                  <Link
+                    href="/become-cleaner"
                     className="text-muted-foreground hover:text-foreground transition-colors"
                     data-testid="link-become-cleaner"
                   >
                     Become a Cleaner
                   </Link>
                 )}
-                <Link href="/dashboard" data-testid="link-dashboard">
-                  <Button variant="ghost" size="sm">
-                    <User className="h-4 w-4 mr-2" />
-                    {user.name}
-                  </Button>
-                </Link>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  data-testid="button-logout"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" data-testid="button-user-menu">
+                      <User className="h-4 w-4 mr-2" />
+                      {user.name}
+                      <ChevronDown className="h-3 w-3 ml-1 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel className="font-normal">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <Link href="/profile">
+                      <DropdownMenuItem className="cursor-pointer" data-testid="menu-item-profile">
+                        <User className="h-4 w-4" />
+                        Profile
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/dashboard">
+                      <DropdownMenuItem className="cursor-pointer" data-testid="menu-item-dashboard">
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                      onClick={handleLogout}
+                      data-testid="menu-item-logout"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ) : (
               <div className="flex items-center gap-3">
@@ -89,7 +119,7 @@ export function Navbar() {
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
             </Button>
-            <button 
+            <button
               className="md:hidden p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="button-mobile-menu"
@@ -102,8 +132,8 @@ export function Navbar() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t">
             <div className="flex flex-col gap-4">
-              <Link 
-                href="/cleaners" 
+              <Link
+                href="/cleaners"
                 className="text-muted-foreground hover:text-foreground"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -112,8 +142,8 @@ export function Navbar() {
               {user ? (
                 <>
                   {!user.isCleaner && (
-                    <Link 
-                      href="/become-cleaner" 
+                    <Link
+                      href="/become-cleaner"
                       className="text-muted-foreground hover:text-foreground"
                       onClick={() => setMobileMenuOpen(false)}
                       data-testid="link-become-cleaner-mobile"
@@ -121,8 +151,16 @@ export function Navbar() {
                       Become a Cleaner
                     </Link>
                   )}
-                  <Link 
-                    href="/dashboard" 
+                  <Link
+                    href="/profile"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                    data-testid="link-profile-mobile"
+                  >
+                    Profile
+                  </Link>
+                  <Link
+                    href="/dashboard"
                     className="text-muted-foreground hover:text-foreground"
                     onClick={() => setMobileMenuOpen(false)}
                   >
