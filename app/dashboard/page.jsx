@@ -1,17 +1,74 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/use-auth";
-import { useBookings, useUpdateBookingStatus } from "@/app/hooks/use-bookings";
+import { useBookings, useUpdateBookingStatus, useRateBooking } from "@/app/hooks/use-bookings";
 import { useMyCleanerProfile } from "@/app/hooks/use-cleaners";
 import { Navbar } from "@/app/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
-import { Calendar, Clock, MapPin, DollarSign, Check, X } from "lucide-react";
+import { Calendar, Clock, MapPin, DollarSign, Check, X, Star } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useToast } from "@/app/hooks/use-toast";
+
+function StarRating({ bookingId, onSuccess }) {
+  const [hovered, setHovered] = useState(0);
+  const [selected, setSelected] = useState(0);
+  const rateBooking = useRateBooking();
+  const { toast } = useToast();
+
+  const handleSubmit = async () => {
+    if (!selected) return;
+    try {
+      await rateBooking.mutateAsync({ id: bookingId, rating: selected });
+      toast({ title: "Rating submitted!", description: `You gave ${selected} star${selected > 1 ? "s" : ""}.` });
+      onSuccess?.();
+    } catch (err) {
+      toast({ title: "Error", description: err.message || "Failed to submit rating", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 mt-2" data-testid={`rating-widget-${bookingId}`}>
+      <span className="text-sm text-muted-foreground">Rate:</span>
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
+            onMouseEnter={() => setHovered(star)}
+            onMouseLeave={() => setHovered(0)}
+            onClick={() => setSelected(star)}
+            data-testid={`star-${bookingId}-${star}`}
+          >
+            <Star
+              className={`h-5 w-5 ${
+                star <= (hovered || selected)
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-muted-foreground"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+      {selected > 0 && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleSubmit}
+          disabled={rateBooking.isPending}
+          data-testid={`button-submit-rating-${bookingId}`}
+          className="ml-1 h-7 text-xs px-2"
+        >
+          {rateBooking.isPending ? "Saving…" : "Submit"}
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -66,9 +123,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -94,9 +149,7 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold" data-testid="text-welcome">
               Welcome, {user.name}!
             </h1>
-            <p className="text-muted-foreground mt-2">
-              Manage your bookings and account
-            </p>
+            <p className="text-muted-foreground mt-2">Manage your bookings and account</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -124,7 +177,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">
-                      {bookings?.filter(b => b.status === "pending").length || 0}
+                      {bookings?.filter((b) => b.status === "pending").length || 0}
                     </p>
                     <p className="text-muted-foreground text-sm">Pending</p>
                   </div>
@@ -167,89 +220,131 @@ export default function DashboardPage() {
                 </div>
               ) : bookings && bookings.length > 0 ? (
                 <div className="space-y-4" data-testid="list-bookings">
-                  {bookings.map((booking) => (
-                    <div 
-                      key={booking.id} 
-                      className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                      data-testid={`booking-${booking.id}`}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {format(new Date(booking.date), "MMM d, yyyy 'at' h:mm a")}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                          </span>
-                          {isCleanerBooking(booking.cleanerId) && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                              Your Service
-                            </span>
-                          )}
+                  {bookings.map((booking) => {
+                    const isCleaner = isCleanerBooking(booking.cleanerId);
+                    const canRate =
+                      booking.status === "completed" &&
+                      !isCleaner &&
+                      booking.customerRating === null;
+                    const alreadyRated =
+                      booking.status === "completed" &&
+                      !isCleaner &&
+                      booking.customerRating !== null;
+
+                    return (
+                      <div
+                        key={booking.id}
+                        className="border rounded-lg p-4 flex flex-col gap-3"
+                        data-testid={`booking-${booking.id}`}
+                      >
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">
+                                {format(new Date(booking.date), "MMM d, yyyy 'at' h:mm a")}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}
+                              >
+                                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                              </span>
+                              {isCleaner && (
+                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                  Your Service
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <MapPin className="h-4 w-4" />
+                              <span>{booking.address}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                              <Clock className="h-4 w-4" />
+                              <span>{booking.hours} hours</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <p className="text-lg font-bold text-primary">
+                              PKR{booking.totalPrice.toFixed(2)}
+                            </p>
+
+                            {booking.status === "pending" && isCleaner && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(booking.id, "confirmed")}
+                                  disabled={updateStatus.isPending}
+                                  data-testid={`button-confirm-${booking.id}`}
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Confirm
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUpdateStatus(booking.id, "cancelled")}
+                                  disabled={updateStatus.isPending}
+                                  data-testid={`button-cancel-${booking.id}`}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Decline
+                                </Button>
+                              </div>
+                            )}
+
+                            {booking.status === "confirmed" && isCleaner && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleUpdateStatus(booking.id, "completed")}
+                                disabled={updateStatus.isPending}
+                                data-testid={`button-complete-${booking.id}`}
+                              >
+                                <Check className="h-4 w-4 mr-1" />
+                                Mark Complete
+                              </Button>
+                            )}
+
+                            {booking.status === "pending" && !isCleaner && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateStatus(booking.id, "cancelled")}
+                                disabled={updateStatus.isPending}
+                                data-testid={`button-cancel-customer-${booking.id}`}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          <span>{booking.address}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{booking.hours} hours</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <p className="text-lg font-bold text-primary">
-                          PKR{booking.totalPrice.toFixed(2)}
-                        </p>
-                        {booking.status === "pending" && isCleanerBooking(booking.cleanerId) && (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => handleUpdateStatus(booking.id, "confirmed")}
-                              disabled={updateStatus.isPending}
-                              data-testid={`button-confirm-${booking.id}`}
-                            >
-                              <Check className="h-4 w-4 mr-1" />
-                              Confirm
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUpdateStatus(booking.id, "cancelled")}
-                              disabled={updateStatus.isPending}
-                              data-testid={`button-cancel-${booking.id}`}
-                            >
-                              <X className="h-4 w-4 mr-1" />
-                              Decline
-                            </Button>
+
+                        {/* Star rating — shown only to customer on completed bookings */}
+                        {canRate && <StarRating bookingId={booking.id} />}
+
+                        {alreadyRated && (
+                          <div className="flex items-center gap-1.5" data-testid={`rated-${booking.id}`}>
+                            <span className="text-sm text-muted-foreground">Your rating:</span>
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-4 w-4 ${
+                                    star <= booking.customerRating
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-muted-foreground"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm font-medium">{booking.customerRating}/5</span>
                           </div>
                         )}
-                        {booking.status === "confirmed" && isCleanerBooking(booking.cleanerId) && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateStatus(booking.id, "completed")}
-                            disabled={updateStatus.isPending}
-                            data-testid={`button-complete-${booking.id}`}
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Mark Complete
-                          </Button>
-                        )}
-                        {booking.status === "pending" && !isCleanerBooking(booking.cleanerId) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUpdateStatus(booking.id, "cancelled")}
-                            disabled={updateStatus.isPending}
-                            data-testid={`button-cancel-customer-${booking.id}`}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Cancel
-                          </Button>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">

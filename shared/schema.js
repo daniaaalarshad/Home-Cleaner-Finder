@@ -34,6 +34,7 @@ export const bookings = pgTable("bookings", {
   status: text("status").notNull().default("pending"),
   address: text("address").notNull(),
   notes: text("notes"),
+  customerRating: integer("customer_rating"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
