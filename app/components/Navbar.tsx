@@ -71,18 +71,18 @@ export function Navbar() {
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <Link href="/profile">
-                      <DropdownMenuItem className="cursor-pointer" data-testid="menu-item-profile">
+                    <DropdownMenuItem asChild className="cursor-pointer" data-testid="menu-item-profile">
+                      <Link href="/profile">
                         <User className="h-4 w-4" />
                         Profile
-                      </DropdownMenuItem>
-                    </Link>
-                    <Link href="/dashboard">
-                      <DropdownMenuItem className="cursor-pointer" data-testid="menu-item-dashboard">
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer" data-testid="menu-item-dashboard">
+                      <Link href="/dashboard">
                         <LayoutDashboard className="h-4 w-4" />
                         Dashboard
-                      </DropdownMenuItem>
-                    </Link>
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="cursor-pointer text-destructive focus:text-destructive"
