@@ -15,7 +15,7 @@ export function useBookings() {
 
 export function useCreateBooking() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data) => {
       const res = await fetch("/api/bookings", {
@@ -37,7 +37,7 @@ export function useCreateBooking() {
 
 export function useUpdateBookingStatus() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, status }) => {
       const res = await fetch(`/api/bookings/${id}`, {
@@ -50,6 +50,30 @@ export function useUpdateBookingStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    },
+  });
+}
+
+export function useRateBooking() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, rating }) => {
+      const res = await fetch(`/api/bookings/${id}/rate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to submit rating");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["cleaners"] });
+      queryClient.invalidateQueries({ queryKey: ["my-cleaner-profile"] });
     },
   });
 }
