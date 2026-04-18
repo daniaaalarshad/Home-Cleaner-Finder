@@ -50,8 +50,10 @@ export default function ForgotPasswordPage() {
         process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
         {
           to_email: data.userEmail,
-          user_name: data.userName,
-          reset_link: resetLink,
+          to_name: data.userName,
+          from_name: "HomeShine",
+          reply_to: data.userEmail,
+          message: resetLink,
         },
         { publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY }
       );
@@ -59,7 +61,8 @@ export default function ForgotPasswordPage() {
       setSent(true);
     } catch (err) {
       console.error("Forgot password error:", err);
-      setError("Failed to send reset email. Please try again.");
+      const detail = err?.text || err?.message || JSON.stringify(err);
+      setError(`EmailJS error: ${detail}`);
     } finally {
       setLoading(false);
     }
