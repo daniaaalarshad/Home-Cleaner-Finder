@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import emailjs from "@emailjs/browser";
 import { Navbar } from "@/app/components/Navbar";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -21,13 +22,11 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
+      // Step 1: generate the reset token on the server
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          origin: window.location.origin,
-        }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await res.json();
@@ -37,9 +36,30 @@ export default function ForgotPasswordPage() {
         return;
       }
 
+      // Account not found — still show success to avoid email enumeration
+      if (!data.sent) {
+        setSent(true);
+        return;
+      }
+
+      // Step 2: send the email from the browser using EmailJS
+      const resetLink = `${window.location.origin}/reset-password?token=${data.token}`;
+
+      await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
+        {
+          to_email: data.userEmail,
+          user_name: data.userName,
+          reset_link: resetLink,
+        },
+        { publicKey: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY }
+      );
+
       setSent(true);
-    } catch {
-      setError("Network error. Please try again.");
+    } catch (err) {
+      console.error("Forgot password error:", err);
+      setError("Failed to send reset email. Please try again.");
     } finally {
       setLoading(false);
     }
