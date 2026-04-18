@@ -7,26 +7,23 @@ import { randomBytes } from "crypto";
 
 const schema = z.object({
   email: z.string().email(),
-  origin: z.string().url().optional(),
 });
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, origin } = schema.parse(body);
+    const { email } = schema.parse(body);
 
     const user = await db.query.users.findFirst({
       where: eq(users.email, email.toLowerCase().trim()),
     });
 
-    // Always respond the same way to prevent email enumeration
     if (!user) {
-      return NextResponse.json({
-        message: "If an account with that email exists, a reset link has been sent.",
-      });
+      // Return same shape but with sent: false to prevent email enumeration
+      return NextResponse.json({ sent: false });
     }
 
-    // Invalidate old tokens
+    // Invalidate any old tokens for this user
     await db
       .update(passwordResetTokens)
       .set({ used: true })
@@ -41,34 +38,12 @@ export async function POST(request) {
       expiresAt,
     });
 
-    const baseUrl = origin || "http://localhost:5000";
-    const resetLink = `${baseUrl}/reset-password?token=${token}`;
-
-    // Send email via EmailJS REST API
-    const emailRes = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        service_id: process.env.EMAILJS_SERVICE_ID,
-        template_id: process.env.EMAILJS_TEMPLATE_ID,
-        user_id: process.env.EMAILJS_PUBLIC_KEY,
-        accessToken: process.env.EMAILJS_PRIVATE_KEY,
-        template_params: {
-          to_email: user.email,
-          user_name: user.name,
-          reset_link: resetLink,
-        },
-      }),
-    });
-
-    if (!emailRes.ok) {
-      const errText = await emailRes.text();
-      console.error("EmailJS error:", emailRes.status, errText);
-      throw new Error(`EmailJS failed: ${errText}`);
-    }
-
+    // Return token + user info to the client so the browser can send the email via EmailJS
     return NextResponse.json({
-      message: "If an account with that email exists, a reset link has been sent.",
+      sent: true,
+      token,
+      userName: user.name,
+      userEmail: user.email,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
