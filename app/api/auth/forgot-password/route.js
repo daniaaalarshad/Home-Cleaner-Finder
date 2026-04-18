@@ -4,7 +4,6 @@ import { users, passwordResetTokens } from "@/shared/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { randomBytes } from "crypto";
-import emailjs from "@emailjs/nodejs";
 
 const schema = z.object({
   email: z.string().email(),
@@ -45,22 +44,28 @@ export async function POST(request) {
     const baseUrl = origin || "http://localhost:5000";
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
-    // Send email via EmailJS Node.js SDK (server-side, uses env secrets)
-    const emailjsOptions = { publicKey: process.env.EMAILJS_PUBLIC_KEY };
-    if (process.env.EMAILJS_PRIVATE_KEY) {
-      emailjsOptions.privateKey = process.env.EMAILJS_PRIVATE_KEY;
-    }
+    // Send email via EmailJS REST API
+    const emailRes = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        service_id: process.env.EMAILJS_SERVICE_ID,
+        template_id: process.env.EMAILJS_TEMPLATE_ID,
+        user_id: process.env.EMAILJS_PUBLIC_KEY,
+        accessToken: process.env.EMAILJS_PRIVATE_KEY,
+        template_params: {
+          to_email: user.email,
+          user_name: user.name,
+          reset_link: resetLink,
+        },
+      }),
+    });
 
-    await emailjs.send(
-      process.env.EMAILJS_SERVICE_ID,
-      process.env.EMAILJS_TEMPLATE_ID,
-      {
-        to_email: user.email,
-        user_name: user.name,
-        reset_link: resetLink,
-      },
-      emailjsOptions
-    );
+    if (!emailRes.ok) {
+      const errText = await emailRes.text();
+      console.error("EmailJS error:", emailRes.status, errText);
+      throw new Error(`EmailJS failed: ${errText}`);
+    }
 
     return NextResponse.json({
       message: "If an account with that email exists, a reset link has been sent.",
