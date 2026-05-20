@@ -9,7 +9,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Sparkles } from "lucide-react";
+import { Sparkles, User, Briefcase } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isCleaner, setIsCleaner] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
@@ -29,7 +30,7 @@ export default function SignupPage() {
     }
 
     try {
-      await register.mutateAsync({ email, password, name });
+      await register.mutateAsync({ email, password, name, isCleaner });
       router.push("/dashboard");
     } catch (err) {
       setError(err.message || "Registration failed");
@@ -46,7 +47,7 @@ export default function SignupPage() {
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
             <CardTitle className="text-2xl">Create Account</CardTitle>
-            <CardDescription>Join HomeShine and find great cleaners</CardDescription>
+            <CardDescription>Join HomeShine today</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -55,7 +56,44 @@ export default function SignupPage() {
                   {error}
                 </div>
               )}
-              
+
+              {/* Role selector */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCleaner(false)}
+                  data-testid="button-role-customer"
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${
+                    !isCleaner
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  <User className="h-6 w-6" />
+                  <div className="text-center">
+                    <p className="font-medium text-sm">Customer</p>
+                    <p className="text-xs opacity-70">Book cleaners</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCleaner(true)}
+                  data-testid="button-role-cleaner"
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${
+                    isCleaner
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  <Briefcase className="h-6 w-6" />
+                  <div className="text-center">
+                    <p className="font-medium text-sm">Cleaner</p>
+                    <p className="text-xs opacity-70">Offer services</p>
+                  </div>
+                </button>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input
@@ -95,13 +133,15 @@ export default function SignupPage() {
                 />
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={register.isPending}
                 data-testid="button-signup"
               >
-                {register.isPending ? "Creating account..." : "Create Account"}
+                {register.isPending
+                  ? "Creating account..."
+                  : `Sign up as ${isCleaner ? "Cleaner" : "Customer"}`}
               </Button>
             </form>
 

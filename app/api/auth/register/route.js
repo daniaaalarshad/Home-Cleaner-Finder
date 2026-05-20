@@ -10,12 +10,13 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   name: z.string().min(1),
+  isCleaner: z.boolean().optional().default(false),
 });
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, password, name } = registerSchema.parse(body);
+    const { email, password, name, isCleaner } = registerSchema.parse(body);
 
     const existingUser = await db.query.users.findFirst({
       where: eq(users.email, email.toLowerCase()),
@@ -31,6 +32,7 @@ export async function POST(request) {
       email: email.toLowerCase(),
       password: hashedPassword,
       name,
+      isCleaner: isCleaner ?? false,
     }).returning();
 
     const session = await getSession();
