@@ -31,7 +31,7 @@ export default function SignupPage() {
 
     try {
       await register.mutateAsync({ email, password, name, isCleaner });
-      router.push("/dashboard");
+      router.push(isCleaner ? "/become-cleaner" : "/dashboard");
     } catch (err) {
       setError(err.message || "Registration failed");
     }
