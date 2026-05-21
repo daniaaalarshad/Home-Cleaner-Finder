@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { cleaners, users } from "@/shared/schema";
-import { eq, ilike, or } from "drizzle-orm";
+import { and, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 
 const createCleanerSchema = z.object({
@@ -26,16 +26,20 @@ export async function GET(request) {
         .from(cleaners)
         .innerJoin(users, eq(cleaners.userId, users.id))
         .where(
-          or(
-            ilike(users.name, `%${search}%`),
-            ilike(cleaners.location || "", `%${search}%`)
+          and(
+            eq(cleaners.available, true),
+            or(
+              ilike(users.name, `%${search}%`),
+              ilike(cleaners.location || "", `%${search}%`)
+            )
           )
         );
     } else {
       results = await db
         .select()
         .from(cleaners)
-        .innerJoin(users, eq(cleaners.userId, users.id));
+        .innerJoin(users, eq(cleaners.userId, users.id))
+        .where(eq(cleaners.available, true));
     }
 
     const formattedResults = results.map((row) => ({
