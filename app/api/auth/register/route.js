@@ -11,12 +11,13 @@ const registerSchema = z.object({
   password: z.string().min(6),
   name: z.string().min(1),
   isCleaner: z.boolean().optional().default(false),
+  avatarUrl: z.string().optional().nullable(),
 });
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, password, name, isCleaner } = registerSchema.parse(body);
+    const { email, password, name, isCleaner, avatarUrl } = registerSchema.parse(body);
 
     const existingUser = await db.query.users.findFirst({
       where: eq(users.email, email.toLowerCase()),
@@ -33,6 +34,7 @@ export async function POST(request) {
       password: hashedPassword,
       name,
       isCleaner: isCleaner ?? false,
+      avatarUrl: avatarUrl || null,
     }).returning();
 
     const session = await getSession();
@@ -47,6 +49,7 @@ export async function POST(request) {
       email: newUser.email,
       name: newUser.name,
       isCleaner: newUser.isCleaner,
+      avatarUrl: newUser.avatarUrl || null,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
