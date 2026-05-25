@@ -8,7 +8,7 @@ import { Navbar } from "@/app/components/Navbar";
 import { CleanerCard } from "@/app/components/CleanerCard";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
-import { MapPin, Star, ShieldCheck, Clock, Search } from "lucide-react";
+import { MapPin, Star, Clock, Search, HeartHandshake } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
@@ -66,23 +66,14 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-16 bg-secondary/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShieldCheck className="h-8 w-8 text-primary" />
+                <HeartHandshake className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Verified Professionals</h3>
+              <h3 className="text-lg font-semibold mb-2">Initiative Taken for Your Ease</h3>
               <p className="text-muted-foreground">
-                All cleaners are background-checked and vetted for your peace of mind.
-              </p>
-            </div>
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Top-Rated Service</h3>
-              <p className="text-muted-foreground">
-                Our cleaners maintain high ratings through consistent quality work.
+                We handle everything — from finding the right cleaner to booking — so you don't have to.
               </p>
             </div>
             <div className="text-center p-6">
