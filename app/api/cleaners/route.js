@@ -49,6 +49,7 @@ export async function GET(request) {
         email: row.users.email,
         name: row.users.name,
         isCleaner: row.users.isCleaner,
+        avatarUrl: row.users.avatarUrl,
       },
     }));
 
