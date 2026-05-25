@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRegister } from "@/app/hooks/use-auth";
 import { Navbar } from "@/app/components/Navbar";
+import { AvatarPicker } from "@/app/components/AvatarPicker";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -18,6 +19,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isCleaner, setIsCleaner] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
@@ -30,7 +32,7 @@ export default function SignupPage() {
     }
 
     try {
-      await register.mutateAsync({ email, password, name, isCleaner });
+      await register.mutateAsync({ email, password, name, isCleaner, avatarUrl });
       router.push(isCleaner ? "/become-cleaner" : "/dashboard");
     } catch (err) {
       setError(err.message || "Registration failed");
@@ -56,6 +58,17 @@ export default function SignupPage() {
                   {error}
                 </div>
               )}
+
+              {/* Avatar picker */}
+              <div className="flex flex-col items-center gap-1">
+                <AvatarPicker
+                  avatarUrl={avatarUrl}
+                  name={name}
+                  onChange={setAvatarUrl}
+                  size="lg"
+                />
+                <p className="text-xs text-muted-foreground">Click to add a photo (optional)</p>
+              </div>
 
               {/* Role selector */}
               <div className="grid grid-cols-2 gap-3">

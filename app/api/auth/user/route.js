@@ -27,6 +27,7 @@ export async function GET() {
       email: user.email,
       name: user.name,
       isCleaner: user.isCleaner,
+      avatarUrl: user.avatarUrl || null,
     });
   } catch (error) {
     console.error("Auth user error:", error);
@@ -39,6 +40,7 @@ const updateProfileSchema = z.object({
   email: z.string().email("Invalid email").optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(6, "Password must be at least 6 characters").optional(),
+  avatarUrl: z.string().optional().nullable(),
 });
 
 export async function PATCH(request) {
@@ -55,7 +57,7 @@ export async function PATCH(request) {
       return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
     }
 
-    const { name, email, currentPassword, newPassword } = parsed.data;
+    const { name, email, currentPassword, newPassword, avatarUrl } = parsed.data;
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, session.userId),
@@ -67,9 +69,7 @@ export async function PATCH(request) {
 
     const updates = {};
 
-    if (name && name !== user.name) {
-      updates.name = name;
-    }
+    if (name && name !== user.name) updates.name = name;
 
     if (email && email.toLowerCase() !== user.email) {
       const existing = await db.query.users.findFirst({
@@ -92,13 +92,16 @@ export async function PATCH(request) {
       updates.password = await bcrypt.hash(newPassword, 12);
     }
 
+    if (avatarUrl !== undefined) {
+      updates.avatarUrl = avatarUrl;
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No changes to save" }, { status: 400 });
     }
 
     const [updated] = await db.update(users).set(updates).where(eq(users.id, session.userId)).returning();
 
-    // keep session name/email in sync
     if (updates.name) session.name = updated.name;
     if (updates.email) session.email = updated.email;
     await session.save();
@@ -108,6 +111,7 @@ export async function PATCH(request) {
       email: updated.email,
       name: updated.name,
       isCleaner: updated.isCleaner,
+      avatarUrl: updated.avatarUrl || null,
     });
   } catch (error) {
     console.error("Update profile error:", error);
