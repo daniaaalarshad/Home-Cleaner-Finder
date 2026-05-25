@@ -98,7 +98,7 @@ export default function Home() {
                 Cleaners
               </h2>
               <p className="text-muted-foreground">
-                Top-rated professionals ready to help
+                Professionals to help
               </p>
             </div>
             <Link href="/cleaners" data-testid="link-view-all">
