@@ -9,9 +9,9 @@ export function CleanerCard({ cleaner }) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow" data-testid={`card-cleaner-${cleaner.id}`}>
       <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-        {cleaner.imageUrl ? (
+        {cleaner.imageUrl || cleaner.user?.avatarUrl ? (
           <img 
-            src={cleaner.imageUrl} 
+            src={cleaner.imageUrl || cleaner.user.avatarUrl} 
             alt={cleaner.user.name}
             className="w-full h-full object-cover"
           />
