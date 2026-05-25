@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/app/hooks/use-auth";
 import { useMyCleanerProfile } from "@/app/hooks/use-cleaners";
 import { Navbar } from "@/app/components/Navbar";
+import { AvatarPicker } from "@/app/components/AvatarPicker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -45,6 +46,7 @@ export default function ProfilePage() {
   const [savingAccount, setSavingAccount] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
@@ -67,6 +69,7 @@ export default function ProfilePage() {
     if (user) {
       setName(user.name);
       setEmail(user.email);
+      setAvatarUrl(user.avatarUrl || null);
     }
   }, [user]);
 
@@ -101,7 +104,7 @@ export default function ProfilePage() {
   const handleSaveAccount = async () => {
     setSavingAccount(true);
     try {
-      const body = { name, email };
+      const body = { name, email, avatarUrl };
       if (changingPassword && newPassword) {
         body.currentPassword = currentPassword;
         body.newPassword = newPassword;
@@ -205,13 +208,25 @@ export default function ProfilePage() {
 
           {/* Avatar & name header */}
           <div className="text-center mb-8">
-            <div
-              className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
-              data-testid="avatar-initial"
-            >
-              <span className="text-4xl font-bold text-primary">
-                {user.name.charAt(0).toUpperCase()}
-              </span>
+            <div className="flex flex-col items-center gap-2 mb-4">
+              <AvatarPicker
+                avatarUrl={avatarUrl}
+                name={user.name}
+                onChange={async (newUrl) => {
+                  setAvatarUrl(newUrl);
+                  const res = await fetch("/api/auth/user", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: user.name, email: user.email, avatarUrl: newUrl }),
+                  });
+                  if (res.ok) {
+                    await queryClient.invalidateQueries({ queryKey: ["auth"] });
+                    toast({ title: "Photo updated" });
+                  }
+                }}
+                size="lg"
+              />
+              <p className="text-xs text-muted-foreground">Click photo to change</p>
             </div>
             <h1 className="text-3xl font-bold" data-testid="text-profile-name">{user.name}</h1>
             <span

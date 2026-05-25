@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   isCleaner: boolean("is_cleaner").default(false),
+  avatarUrl: text("avatar_url"),
 });
 
 export const cleaners = pgTable("cleaners", {
